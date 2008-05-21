@@ -1,3 +1,6 @@
+/*
+* $Id$
+*/
 
 #include <pspkernel.h>
 #include <pspctrl.h>
@@ -24,7 +27,7 @@ void monPrintMem(unsigned int offset)
         addr += 16;
         offset += 16;
     }
-    pgScreenFlipV();
+    pgScreenFlip();
 }
 
 void monMenu(void)
@@ -40,8 +43,6 @@ void monMenu(void)
         newButton = pad.Buttons;
         if (newButton & PSP_CTRL_CROSS)
         {
-            pgFillvram(0);
-            pgScreenFlipV();
             pgFillvram(0);
             return;
         }

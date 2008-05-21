@@ -1,4 +1,6 @@
 /*
+* $Id$
+
 サウンドスレッドはe[mulator]のソースを利用しています
 */
 #include <pspkernel.h>

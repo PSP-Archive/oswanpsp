@@ -1,7 +1,11 @@
+/*
+* $Id$
+*/
 
 #include <pspkernel.h>
 #include <pspctrl.h>
 #include <psppower.h>
+#include <pspgu.h>
 #include <stdio.h>
 #include "fileio.h"
 #include "pg.h"
@@ -120,6 +124,7 @@ int main(int argc, char *argv[])
             }
             //scePowerSetClockFrequency(222, 222, 111);
         }
+		sceGuSwapBuffers();
     }
     if (Cart)
     {

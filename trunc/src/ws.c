@@ -1,7 +1,11 @@
+/*
+* $Id$
+*/
 
 #include <pspkernel.h>
 #include <pspdisplay.h>
 #include <pspctrl.h>
+#include <pspgu.h>
 #include <stdio.h>
 #include <malloc.h>
 #include <time.h>
@@ -86,7 +90,7 @@ void wsInit(void)
         {
             mh_print(0, 0, "memory error",RGB(255, 255, 255));
         }
-        pgScreenFlipV();
+        pgScreenFlip();
         pgWaitVn(100);
         return;
     }
@@ -113,7 +117,7 @@ void wsPdata(void)
     if (!Cart)
     {
         mh_print(0, 0, "memory error",RGB(255, 255, 255));
-        pgScreenFlipV();
+        pgScreenFlip();
         pgWaitVn(100);
         return;
     }
@@ -854,23 +858,18 @@ int wsExecute(void)
             mh_print(0, 0, buf,RGB(255, 255, 255));
             sprintf(buf, "%d", Fps - Drop);
             mh_print(0, 10, buf,RGB(255, 255, 255));
-            if (ScreenSize)
-            {
-                blt_hard(FrameBuffer, 8, 0, 240, 144, 0, 240, 144, 2);
-            }
-            else {
-                pgBitBltN1h(FrameBuffer + 8);
-            }
+			pgScreenFlip();
             if (Vsync)
             {
                 sceDisplayWaitVblankStart();
             }
-            pgScreenFlip();
+            pgBitBlt(FrameBuffer + 8);
         }
         else
         {
             WsSkip++;
         }
+		sceGuSwapBuffers();
     }
     return 0;
 }

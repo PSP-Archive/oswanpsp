@@ -1,3 +1,7 @@
+/*
+* $Id$
+*/
+
 #ifndef APU_H_
 #define APU_H_
 

@@ -1,6 +1,10 @@
+/*
+* $Id$
+*/
 
 #include <pspkernel.h>
 #include <pspctrl.h>
+#include <pspgu.h>
 #include <stdio.h>
 #include <string.h>
 #include "fileio.h"
@@ -101,6 +105,7 @@ int menuList(void)
         }
         oldButton = newButton;
         pgScreenFlip();
+		sceGuSwapBuffers();
     }
     return 0;
 }
@@ -122,7 +127,6 @@ void menuPrintList(int selectItem)
             mh_print(10, FONT_HEIGHT * (i + 2), Menu[i],RGB(255, 255, 255));
         }
     }
-    pgScreenFlipV();
 }
 
 void menuBsortList(void)
@@ -207,7 +211,7 @@ int menuRomList(unsigned int oldButton)
                 pgFillvram(0);
                 mh_print(50, 50, "Loading...", RGB(255, 255, 255));
                 mh_print(70, 60, FileList[startPos + selectFile].name, RGB(255, 255, 255));
-                //pgScreenFlipV();
+                pgScreenFlip();
                 strcpy(RomPath, CurDir);
                 strcat(RomPath, FileList[startPos + selectFile].name);
                 return 1;
@@ -270,7 +274,8 @@ int menuRomList(unsigned int oldButton)
                 }
             }
         }
-        pgWaitV();
+        pgScreenFlip();
+		sceGuSwapBuffers();
     }
     return 0;
 }
@@ -452,7 +457,7 @@ void menuStateSavePrintList(int index)
             mh_print(10, FONT_HEIGHT * (i + 2), list, color);
         }
     }
-    pgScreenFlipV();
+    pgScreenFlip();
 }
 
 void menuConfig(unsigned int oldButton, int mode)

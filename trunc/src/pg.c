@@ -1,41 +1,28 @@
-// primitive graphics for Hello World PSP
-//
-// modified by ooba
+/*
+* $Id$
+*/
 
 #include <pspkernel.h>
 #include <pspgu.h>
 #include <pspdisplay.h>
-
 #include "pg.h"
-
 #include "font.h"
 #include "fontNaga10.h"
-
 
 //constants
 #define     PIXELSIZE   1               //in short
 #define     LINESIZE    512             //in short
 #define     FRAMESIZE   0x44000         //in byte
 
-//480*272 = 60*38
-#define CMAX_X 60
-#define CMAX_Y 38
-#define CMAX2_X 30
-#define CMAX2_Y 19
-#define CMAX4_X 15
-#define CMAX4_Y 9
-
-
-//variables
-//char *pg_vramtop=(char *)0x04000000;
-#define pg_vramtop ((char *)0x04000000)
-long pg_screenmode;
-long pg_showframe;
-long pg_drawframe;
-
 unsigned int __attribute__((aligned(16))) gulist[512*512];
 unsigned short __attribute__((aligned(16))) text_buf[512*512];
 
+struct Vertex
+{
+	unsigned short u, v;
+	unsigned short color;
+	short x, y, z;
+};
 
 void pgWaitVn(unsigned long count)
 {
@@ -44,30 +31,14 @@ void pgWaitVn(unsigned long count)
     }
 }
 
-
 void pgWaitV()
 {
     sceDisplayWaitVblankStart();
 }
 
-
 unsigned short* pgGetVramAddr(unsigned long x,unsigned long y)
 {
     return text_buf + x + y*LINESIZE;
-}
-
-
-void pgPrint4(unsigned long x,unsigned long y,unsigned long color,const char *str)
-{
-    while (*str!=0 && x<CMAX4_X && y<CMAX4_Y) {
-        pgPutChar(x*32,y*32,color,0,*str,1,0,4);
-        str++;
-        x++;
-        if (x>=CMAX4_X) {
-            x=0;
-            y++;
-        }
-    }
 }
 
 void pgFillvram(unsigned long color)
@@ -81,130 +52,6 @@ void pgFillvram(unsigned long color)
         vptr0++;
     }
 }
-
-void pgBitBlt(unsigned long x,unsigned long y,unsigned long w,unsigned long h,unsigned long mag,const unsigned short *d)
-{
-    unsigned short *vptr0;       //pointer to vram
-    unsigned short *vptr;        //pointer to vram
-    unsigned long xx,yy,mx,my;
-    const unsigned short *dd;
-
-    vptr0=pgGetVramAddr(x,y);
-    for (yy=0; yy<h; yy++) {
-        for (my=0; my<mag; my++) {
-            vptr=vptr0;
-            dd=d;
-            for (xx=0; xx<w; xx++) {
-                for (mx=0; mx<mag; mx++) {
-                    *vptr=*dd;
-                    vptr+=PIXELSIZE*2;
-                }
-                dd++;
-            }
-            vptr0+=LINESIZE*2;
-        }
-        d+=w;
-    }
-
-}
-
-
-void pgPutChar(unsigned long x,unsigned long y,unsigned long color,unsigned long bgcolor,unsigned char ch,char drawfg,char drawbg,char mag)
-{
-    unsigned short *vptr0;       //pointer to vram
-    unsigned short *vptr;        //pointer to vram
-    const unsigned char *cfont;     //pointer to font
-    unsigned long cx,cy;
-    unsigned long b;
-    char mx,my;
-
-//  if (ch>255) return;
-    cfont=font+ch*8;
-    vptr0=pgGetVramAddr(x,y);
-    for (cy=0; cy<8; cy++) {
-        for (my=0; my<mag; my++) {
-            vptr=vptr0;
-            b=0x80;
-            for (cx=0; cx<8; cx++) {
-                for (mx=0; mx<mag; mx++) {
-                    if ((*cfont&b)!=0) {
-                        if (drawfg) *vptr=color;
-                    } else {
-                        if (drawbg) *vptr=bgcolor;
-                    }
-                    vptr+=PIXELSIZE*2;
-                }
-                b=b>>1;
-            }
-            vptr0+=LINESIZE*2;
-        }
-        cfont++;
-    }
-}
-
-
-void pgScreenFrame(long mode,long frame)
-{
-    pg_screenmode=mode;
-    frame=(frame?1:0);
-    pg_showframe=frame;
-    if (mode==0) {
-        //screen off
-        pg_drawframe=frame;
-        sceDisplaySetFrameBuf(0,0,0,1);
-    } else if (mode==1) {
-        //show/draw same
-        pg_drawframe=frame;
-        sceDisplaySetFrameBuf(pg_vramtop+(pg_showframe?FRAMESIZE:0),LINESIZE,PIXELSIZE,1);
-    } else if (mode==2) {
-        //show/draw different
-        pg_drawframe=(frame?0:1);
-        sceDisplaySetFrameBuf(pg_vramtop+(pg_showframe?FRAMESIZE:0),LINESIZE,PIXELSIZE,1);
-    }
-}
-
-struct Vertex
-{
-	unsigned short u, v;
-	unsigned short color;
-	short x, y, z;
-};
-
-void pgScreenFlip()
-{
-    /*
-    pg_showframe=(pg_showframe?0:1);
-    pg_drawframe=(pg_drawframe?0:1);
-    sceDisplaySetFrameBuf(pg_vramtop+(pg_showframe?FRAMESIZE:0),LINESIZE,PIXELSIZE,0);
-    */
-	struct Vertex* vertices = (struct Vertex*)sceGuGetMemory(2 * sizeof(struct Vertex));
-
-	vertices[0].u = 0; vertices[0].v = 0;
-	vertices[0].color = 0;
-	vertices[0].x = 0; vertices[0].y = 0; vertices[0].z = 0;
-
-	vertices[1].u = SCR_WIDTH; vertices[1].v = SCR_HEIGHT;
-	vertices[1].color = 0;
-	vertices[1].x = SCR_WIDTH; vertices[1].y = SCR_HEIGHT; vertices[1].z = 0;
-
-    sceGuStart(GU_DIRECT,gulist);
-    sceGuTexMode(GU_PSM_5551,0,0,0); // 16-bit RGBA
-    sceGuTexImage(0,512,512,512,text_buf); // setup texture as a 512x512 texture, even though the buffer is only 512x272 (480 visible)
-    sceGuTexFunc(GU_TFX_REPLACE,GU_TCC_RGBA); // don't get influenced by any vertex colors
-    sceGuTexFilter(GU_NEAREST,GU_NEAREST); // point-filtered sampling
-	sceGuDrawArray(GU_SPRITES,GU_TEXTURE_16BIT|GU_COLOR_5551|GU_VERTEX_16BIT|GU_TRANSFORM_2D,2,0,vertices);
-    sceGuFinish();
-    sceGuSync(0,0);
-	sceGuSwapBuffers();
-}
-
-
-void pgScreenFlipV()
-{
-    pgWaitV();
-    pgScreenFlip();
-}
-
 
 // by kwn
 void Draw_Char_Hankaku(int x,int y,const unsigned char c,int col) {
@@ -343,27 +190,72 @@ void mh_print(int x,int y,const char *str,int color) {
     }
 }
 
-//ÇøÇÂÇ¢ëÅÇ¢x1 - LCK
-#define VRAM1 (unsigned long*)(0x04000000+128*2+64*512*2+0x40000000)
-#define VRAM2 (unsigned long*)(0x04000000+128*2+64*512*2+0x40000000+0x44000)
-void pgBitBltN1h(unsigned short *d)
+#define SLICE (32)
+void pgBitBlt(unsigned short *d)
 {
-    unsigned long *v0;      //pointer to vram
-    unsigned long yy, xx;
-    unsigned long *s;
+	int start, end, width;
+	int sx = 0, sy = 0, sw = 240, sh = 144;
+	int dx = 0, dy = 0;
 
-    v0 = (pg_drawframe) ? VRAM2 : VRAM1;
-    s = (unsigned long*)d;
-    for (yy=0; yy<144; yy++) {
-        for (xx = 0; xx < 120; xx++) {
-            *v0++ = *s++;
-        }
-        v0 += (LINESIZE/2-120);
-    }
+    sceGuStart(GU_DIRECT,gulist);
+    sceGuTexMode(GU_PSM_5551,0,0,0);
+    sceGuTexImage(0,sw,sh,sw*2,d);
+    sceGuTexFunc(GU_TFX_REPLACE,GU_TCC_RGBA);
+    sceGuTexFilter(GU_NEAREST,GU_NEAREST);
+	for (start = sx, end = sx+sw; start < end; start += SLICE, dx += SLICE)
+	{
+		struct Vertex* vertices = (struct Vertex*)sceGuGetMemory(2 * sizeof(struct Vertex));
+		width = (start + SLICE) < end ? SLICE : end-start;
+
+		vertices[0].u = start; vertices[0].v = sy;
+		vertices[0].color = 0;
+		vertices[0].x = dx; vertices[0].y = dy; vertices[0].z = 0;
+
+		vertices[1].u = start + width; vertices[1].v = sy + sh;
+		vertices[1].color = 0;
+		vertices[1].x = dx + width; vertices[1].y = dy + sh; vertices[1].z = 0;
+
+		sceGuDrawArray(GU_SPRITES,GU_TEXTURE_16BIT|GU_COLOR_5551|GU_VERTEX_16BIT|GU_TRANSFORM_2D,2,0,vertices);
+	}
+    sceGuFinish();
+    sceGuSync(0,0);
 }
 
-/******************************************************************************/
+void pgScreenFlip()
+{
+	int start, end, width;
+	int dx = 0;
 
+    sceGuStart(GU_DIRECT,gulist);
+    sceGuTexMode(GU_PSM_5551,0,0,0); // 16-bit RGBA
+    sceGuTexImage(0,512,512,512,text_buf); // setup texture as a 512x512 texture, even though the buffer is only 512x272 (480 visible)
+    sceGuTexFunc(GU_TFX_REPLACE,GU_TCC_RGBA); // don't get influenced by any vertex colors
+    sceGuTexFilter(GU_NEAREST,GU_NEAREST); // point-filtered sampling
+	for (start = 0, end = SCR_WIDTH; start < end; start += SLICE, dx += SLICE)
+	{
+		struct Vertex* vertices = (struct Vertex*)sceGuGetMemory(2 * sizeof(struct Vertex));
+		width = (start + SLICE) < end ? SLICE : end-start;
+
+		vertices[0].u = start; vertices[0].v = 0;
+		vertices[0].color = 0;
+		vertices[0].x = dx; vertices[0].y = 0; vertices[0].z = 0;
+
+		vertices[1].u = start + width; vertices[1].v = SCR_HEIGHT;
+		vertices[1].color = 0;
+		vertices[1].x = dx + width; vertices[1].y = SCR_HEIGHT; vertices[1].z = 0;
+
+		sceGuDrawArray(GU_SPRITES,GU_TEXTURE_16BIT|GU_COLOR_5551|GU_VERTEX_16BIT|GU_TRANSFORM_2D,2,0,vertices);
+	}
+    sceGuFinish();
+    sceGuSync(0,0);
+}
+
+
+void pgScreenFlipV()
+{
+    pgWaitV();
+    pgScreenFlip();
+}
 
 void pgGuInit(void)
 {
@@ -400,9 +292,4 @@ void pgGuInit(void)
 
 	sceDisplayWaitVblankStart();
 	sceGuDisplay(GU_TRUE);
-}
-
-void blt_hard(unsigned short* pBuf,int x,int y,int w,int h,int rot,int bw,int bh,int mode)
-{
-
 }

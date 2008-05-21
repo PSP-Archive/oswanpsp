@@ -1,3 +1,7 @@
+/*
+* $Id$
+*/
+
 #ifndef GPU_H_
 #define GPU_H_
 

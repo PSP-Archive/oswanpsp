@@ -1,3 +1,7 @@
+/*
+* $Id$
+*/
+
 #ifndef WS_H_
 #define WS_H_
 
