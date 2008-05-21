@@ -72,6 +72,11 @@ int ScreenSize;
 int Vsync;
 unsigned char SRAM[0x10000]; // ダミーのSRAM(WonderWitchで使用)
 
+extern unsigned short *draw_frame;
+extern unsigned short *work_frame;
+extern unsigned short *tex_frame;
+extern RECT full_rect;
+
 void wsInit(void)
 {
     int ret;
@@ -90,7 +95,7 @@ void wsInit(void)
         {
             mh_print(0, 0, "memory error",RGB(255, 255, 255));
         }
-        pgScreenFlip();
+        video_copy_rect(tex_frame, draw_frame, &full_rect, &full_rect);
         pgWaitVn(100);
         return;
     }
@@ -117,7 +122,7 @@ void wsPdata(void)
     if (!Cart)
     {
         mh_print(0, 0, "memory error",RGB(255, 255, 255));
-        pgScreenFlip();
+        video_copy_rect(tex_frame, draw_frame, &full_rect, &full_rect);
         pgWaitVn(100);
         return;
     }
@@ -844,7 +849,17 @@ int wsExecute(void)
     int i;
     char buf[256];
     int render;
+	RECT src_rect;
+	RECT dst_rect;
 
+	src_rect.left = 8;
+	src_rect.top = 0;
+	src_rect.right = 248;
+	src_rect.bottom = 144;
+	dst_rect.left = 120;
+	dst_rect.top = 64;
+	dst_rect.right = 120+240;
+	dst_rect.bottom = 64+144;
     for (i = 4; i--;)
     {
         render = wsFrameSkipSound();
@@ -858,18 +873,14 @@ int wsExecute(void)
             mh_print(0, 0, buf,RGB(255, 255, 255));
             sprintf(buf, "%d", Fps - Drop);
             mh_print(0, 10, buf,RGB(255, 255, 255));
-			pgScreenFlip();
-            if (Vsync)
-            {
-                sceDisplayWaitVblankStart();
-            }
-            pgBitBlt(FrameBuffer + 8);
+			video_copy_rect(tex_frame, draw_frame, &full_rect, &full_rect);
+			video_copy_rect(work_frame, draw_frame, &src_rect, &dst_rect);
+			video_flip_screen(Vsync);
         }
         else
         {
             WsSkip++;
         }
-		sceGuSwapBuffers();
     }
     return 0;
 }

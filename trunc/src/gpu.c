@@ -26,6 +26,8 @@ char LMask[256 + 8];
 char WMaskIn[256];
 char WMaskAll[256];
 
+extern unsigned short *work_frame;
+
 void gpuInit(void)
 {
     memset(TileCache, 0, 1024*8*8);
@@ -148,7 +150,7 @@ void gpuRenderFGMono(void)
     map = FgMap + ((scrollY & 0xF8) << 2); // scrollY>>3 <<5
     tileX = IO[0x12] & 0x07;
     tileY = scrollY & 0x07;
-    vptr = FrameBuffer + IO[0x02] * 240 + 8 - tileX;
+    vptr = GU_FRAME_ADDR(work_frame) + IO[0x02] * BUF_WIDTH + 8 - tileX;
     layerMask = LMask + 8 - tileX;
     for (j = -tileX; j < 224; j += 8) {
         color = gpuMonoTileCache(map[scrollX & 0x1F], tileY, map[scrollX & 0x1F] & 0x2000);
@@ -254,7 +256,7 @@ void gpuRenderScanLineMono(void)
         map = BgMap + ((scrollY & 0xF8) << 2); // scrollY>>3 <<5
         tileX = IO[0x10] & 0x07;
         tileY = scrollY & 0x07;
-        vptr = FrameBuffer + IO[0x02] * 240 + 8 - tileX;
+        vptr = GU_FRAME_ADDR(work_frame) + IO[0x02] * BUF_WIDTH + 8 - tileX;
         for (j = -tileX; j < 224; j+=8) {
             color = gpuMonoTileCache(map[scrollX & 0x1F], tileY, map[scrollX & 0x1F] & 0x2000);
             pal = (map[scrollX & 0x1F] >> 9) & 0x0F;
@@ -287,7 +289,7 @@ void gpuRenderScanLineMono(void)
         }
     }
     else {
-        vptr = FrameBuffer + IO[0x02] * 240 + 8;
+        vptr = GU_FRAME_ADDR(work_frame) + IO[0x02] * BUF_WIDTH + 8;
         for (i = 0; i < 224; i++) {
             *vptr++ = baseColor;
         }
@@ -363,7 +365,7 @@ void gpuRenderScanLineMono(void)
             if (x + nbPixels > 224) {
                 nbPixels = (224 - x);
             }
-            vptr = FrameBuffer + IO[0x02] * 240 + 8 + x;
+            vptr = GU_FRAME_ADDR(work_frame) + IO[0x02] * BUF_WIDTH + 8 + x;
             layerMask = LMask + 8 + x;
             if(IO[0x00] & 0x08) {
                 windowMask = WMaskIn + x;
@@ -537,7 +539,7 @@ void gpuRenderFGColor(void)
     map = FgMap + ((scrollY & 0xF8) << 2); // scrollY>>3 <<5
     tileX = IO[0x12] & 0x07;
     tileY = scrollY & 0x07;
-    vptr = FrameBuffer + IO[0x02] * 240 + 8 - tileX;
+    vptr = GU_FRAME_ADDR(work_frame) + IO[0x02] * BUF_WIDTH + 8 - tileX;
     layerMask = LMask + 8 - tileX;
     for (j = -tileX; j < 224; j += 8) {
         color = gpuColorTileCache(map[scrollX & 0x1F], tileY, map[scrollX & 0x1F] & 0x2000);
@@ -606,7 +608,7 @@ void gpuRenderScanLineColor(void)
         map = BgMap + ((scrollY & 0xF8) << 2); // scrollY>>3 * 32
         tileX = IO[0x10] & 0x07;
         tileY = scrollY & 0x07;
-        vptr = FrameBuffer + IO[0x02] * 240 + 8 - tileX;
+        vptr = GU_FRAME_ADDR(work_frame) + IO[0x02] * BUF_WIDTH + 8 - tileX;
         for (j = -tileX; j < 224; j += 8) {
             color = gpuColorTileCache(map[scrollX & 0x1F], tileY, map[scrollX & 0x1F] & 0x2000);
             if (color) {
@@ -637,7 +639,7 @@ void gpuRenderScanLineColor(void)
         }
     }
     else {
-        vptr = FrameBuffer + IO[0x02] * 240 + 8;
+        vptr = GU_FRAME_ADDR(work_frame) + IO[0x02] * BUF_WIDTH + 8;
         for (i = 0; i < 224; i++) {
             *vptr++ = baseColor;
         }
@@ -712,7 +714,7 @@ void gpuRenderScanLineColor(void)
             if (x + nbPixels > 224) {
                 nbPixels = (224 - x);
             }
-            vptr = FrameBuffer + IO[0x02] * 240 + 8 + x;
+            vptr = GU_FRAME_ADDR(work_frame) + IO[0x02] * BUF_WIDTH + 8 + x;
             layerMask = LMask + 8 + x;
             if(IO[0x00] & 0x08) {
                 windowMask = WMaskIn + x;

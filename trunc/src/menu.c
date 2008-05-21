@@ -4,7 +4,6 @@
 
 #include <pspkernel.h>
 #include <pspctrl.h>
-#include <pspgu.h>
 #include <stdio.h>
 #include <string.h>
 #include "fileio.h"
@@ -36,6 +35,10 @@ const char *VsyncMenu[2] = {
     "Vsync OFF",
     "Vsync ON",
 };
+
+extern unsigned short *draw_frame;
+extern unsigned short *tex_frame;
+extern RECT full_rect;
 
 int menuList(void)
 {
@@ -104,8 +107,8 @@ int menuList(void)
             return 3;
         }
         oldButton = newButton;
-        pgScreenFlip();
-		sceGuSwapBuffers();
+        video_copy_rect(tex_frame, draw_frame, &full_rect, &full_rect);
+		video_flip_screen(1);
     }
     return 0;
 }
@@ -211,7 +214,8 @@ int menuRomList(unsigned int oldButton)
                 pgFillvram(0);
                 mh_print(50, 50, "Loading...", RGB(255, 255, 255));
                 mh_print(70, 60, FileList[startPos + selectFile].name, RGB(255, 255, 255));
-                pgScreenFlip();
+                video_copy_rect(tex_frame, draw_frame, &full_rect, &full_rect);
+				video_flip_screen(1);
                 strcpy(RomPath, CurDir);
                 strcat(RomPath, FileList[startPos + selectFile].name);
                 return 1;
@@ -274,8 +278,8 @@ int menuRomList(unsigned int oldButton)
                 }
             }
         }
-        pgScreenFlip();
-		sceGuSwapBuffers();
+        video_copy_rect(tex_frame, draw_frame, &full_rect, &full_rect);
+		video_flip_screen(1);
     }
     return 0;
 }
@@ -368,7 +372,6 @@ void menuPrintRomList(int startPos, int selectFile)
             mh_print(10, (i - startPos + 2) * FONT_HEIGHT, FileList[i].name,RGB(100, 100, 100));
         }
     }
-    //pgScreenFlipV();
 }
 
 void menuStateList(unsigned int oldButton, int save)
@@ -457,7 +460,7 @@ void menuStateSavePrintList(int index)
             mh_print(10, FONT_HEIGHT * (i + 2), list, color);
         }
     }
-    pgScreenFlip();
+    video_copy_rect(tex_frame, draw_frame, &full_rect, &full_rect);
 }
 
 void menuConfig(unsigned int oldButton, int mode)

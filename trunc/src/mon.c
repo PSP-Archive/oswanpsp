@@ -4,11 +4,16 @@
 
 #include <pspkernel.h>
 #include <pspctrl.h>
+#include <pspgu.h>
 #include <stdio.h>
 #include <string.h>
 #include "mon.h"
 #include "ws.h"
 #include "pg.h"
+
+extern unsigned short *draw_frame;
+extern unsigned short *tex_frame;
+extern RECT full_rect;
 
 void monPrintMem(unsigned int offset)
 {
@@ -27,7 +32,7 @@ void monPrintMem(unsigned int offset)
         addr += 16;
         offset += 16;
     }
-    pgScreenFlip();
+    video_copy_rect(tex_frame, draw_frame, &full_rect, &full_rect);
 }
 
 void monMenu(void)
@@ -67,5 +72,6 @@ void monMenu(void)
             monPrintMem(offset);
         }
         oldButton = newButton;
+		video_flip_screen(1);
     }
 }

@@ -80,8 +80,6 @@ int main(int argc, char *argv[])
     {
         ret = menuList();
         pgFillvram(0);
-        pgScreenFlip();
-        pgFillvram(0);
         switch (ret)
         {
         case 0: // Exit
@@ -100,7 +98,7 @@ int main(int argc, char *argv[])
         }
         if (Cart)
         {
-            //scePowerSetClockFrequency(333, 333, 166);
+            scePowerSetClockFrequency(333, 333, 166);
             while (Run)
             {
                 wsExecute();
@@ -122,9 +120,9 @@ int main(int argc, char *argv[])
                     sceCtrlReadBufferPositive(&Pad, 1);
                 }
             }
-            //scePowerSetClockFrequency(222, 222, 111);
+            scePowerSetClockFrequency(222, 222, 111);
         }
-		sceGuSwapBuffers();
+		video_flip_screen(1);
     }
     if (Cart)
     {

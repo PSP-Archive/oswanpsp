@@ -9,13 +9,21 @@
 #include "font.h"
 #include "fontNaga10.h"
 
-//constants
-#define     PIXELSIZE   1               //in short
-#define     LINESIZE    512             //in short
-#define     FRAMESIZE   0x44000         //in byte
-
 unsigned int __attribute__((aligned(16))) gulist[512*512];
-unsigned short __attribute__((aligned(16))) text_buf[512*512];
+unsigned short *show_frame;
+unsigned short *draw_frame;
+unsigned short *work_frame;
+unsigned short *tex_frame;
+RECT full_rect = { 0, 0, SCR_WIDTH, SCR_HEIGHT };
+
+static const ScePspIMatrix4 dither_matrix =
+{
+	// Bayer dither
+	{  0,  8,  2, 10 },
+	{ 12,  4, 14,  6 },
+	{  3, 11,  1,  9 },
+	{ 15,  7, 13,  5 }
+};
 
 struct Vertex
 {
@@ -38,7 +46,7 @@ void pgWaitV()
 
 unsigned short* pgGetVramAddr(unsigned long x,unsigned long y)
 {
-    return text_buf + x + y*LINESIZE;
+    return GU_FRAME_ADDR(tex_frame) + x + y*LINESIZE;
 }
 
 void pgFillvram(unsigned long color)
@@ -190,82 +198,91 @@ void mh_print(int x,int y,const char *str,int color) {
     }
 }
 
-#define SLICE (32)
-void pgBitBlt(unsigned short *d)
+/*--------------------------------------------------------
+	矩形範囲をコピー
+--------------------------------------------------------*/
+
+void video_copy_rect(void *src, void *dst, RECT *src_rect, RECT *dst_rect)
 {
-	int start, end, width;
-	int sx = 0, sy = 0, sw = 240, sh = 144;
-	int dx = 0, dy = 0;
+	int j, sw, dw, sh, dh;
+	struct Vertex *vertices;
 
-    sceGuStart(GU_DIRECT,gulist);
-    sceGuTexMode(GU_PSM_5551,0,0,0);
-    sceGuTexImage(0,sw,sh,sw*2,d);
-    sceGuTexFunc(GU_TFX_REPLACE,GU_TCC_RGBA);
-    sceGuTexFilter(GU_NEAREST,GU_NEAREST);
-	for (start = sx, end = sx+sw; start < end; start += SLICE, dx += SLICE)
+	sw = src_rect->right - src_rect->left;
+	dw = dst_rect->right - dst_rect->left;
+	sh = src_rect->bottom - src_rect->top;
+	dh = dst_rect->bottom - dst_rect->top;
+
+	sceGuStart(GU_DIRECT, gulist);
+
+	sceGuDrawBufferList(GU_PSM_5551, dst, BUF_WIDTH);
+	sceGuScissor(dst_rect->left, dst_rect->top, dst_rect->right, dst_rect->bottom);
+	sceGuDisable(GU_ALPHA_TEST);
+
+	sceGuTexMode(GU_PSM_5551, 0, 0, GU_FALSE);
+	sceGuTexImage(0, BUF_WIDTH, BUF_WIDTH, BUF_WIDTH, GU_FRAME_ADDR(src));
+	if (sw == dw && sh == dh)
+		sceGuTexFilter(GU_NEAREST, GU_NEAREST);
+	else
+		sceGuTexFilter(GU_LINEAR, GU_LINEAR);
+
+	for (j = 0; (j + SLICE_SIZE) < sw; j = j + SLICE_SIZE)
 	{
-		struct Vertex* vertices = (struct Vertex*)sceGuGetMemory(2 * sizeof(struct Vertex));
-		width = (start + SLICE) < end ? SLICE : end-start;
+		vertices = (struct Vertex *)sceGuGetMemory(2 * sizeof(struct Vertex));
 
-		vertices[0].u = start; vertices[0].v = sy;
-		vertices[0].color = 0;
-		vertices[0].x = dx; vertices[0].y = dy; vertices[0].z = 0;
+		vertices[0].u = src_rect->left + j;
+		vertices[0].v = src_rect->top;
+		vertices[0].x = dst_rect->left + j * dw / sw;
+		vertices[0].y = dst_rect->top;
 
-		vertices[1].u = start + width; vertices[1].v = sy + sh;
-		vertices[1].color = 0;
-		vertices[1].x = dx + width; vertices[1].y = dy + sh; vertices[1].z = 0;
+		vertices[1].u = src_rect->left + j + SLICE_SIZE;
+		vertices[1].v = src_rect->bottom;
+		vertices[1].x = dst_rect->left + (j + SLICE_SIZE) * dw / sw;
+		vertices[1].y = dst_rect->bottom;
 
-		sceGuDrawArray(GU_SPRITES,GU_TEXTURE_16BIT|GU_COLOR_5551|GU_VERTEX_16BIT|GU_TRANSFORM_2D,2,0,vertices);
+		sceGuDrawArray(GU_SPRITES, TEXTURE_FLAGS, 2, NULL, vertices);
 	}
-    sceGuFinish();
-    sceGuSync(0,0);
+
+	if (j < sw)
+	{
+		vertices = (struct Vertex *)sceGuGetMemory(2 * sizeof(struct Vertex));
+
+		vertices[0].u = src_rect->left + j;
+		vertices[0].v = src_rect->top;
+		vertices[0].x = dst_rect->left + j * dw / sw;
+		vertices[0].y = dst_rect->top;
+
+		vertices[1].u = src_rect->right;
+		vertices[1].v = src_rect->bottom;
+		vertices[1].x = dst_rect->right;
+		vertices[1].y = dst_rect->bottom;
+
+		sceGuDrawArray(GU_SPRITES, TEXTURE_FLAGS, 2, NULL, vertices);
+	}
+
+	sceGuFinish();
+	sceGuSync(0, GU_SYNC_FINISH);
 }
 
-void pgScreenFlip()
+void video_flip_screen(int vsync)
 {
-	int start, end, width;
-	int dx = 0;
-
-    sceGuStart(GU_DIRECT,gulist);
-    sceGuTexMode(GU_PSM_5551,0,0,0); // 16-bit RGBA
-    sceGuTexImage(0,512,512,512,text_buf); // setup texture as a 512x512 texture, even though the buffer is only 512x272 (480 visible)
-    sceGuTexFunc(GU_TFX_REPLACE,GU_TCC_RGBA); // don't get influenced by any vertex colors
-    sceGuTexFilter(GU_NEAREST,GU_NEAREST); // point-filtered sampling
-	for (start = 0, end = SCR_WIDTH; start < end; start += SLICE, dx += SLICE)
-	{
-		struct Vertex* vertices = (struct Vertex*)sceGuGetMemory(2 * sizeof(struct Vertex));
-		width = (start + SLICE) < end ? SLICE : end-start;
-
-		vertices[0].u = start; vertices[0].v = 0;
-		vertices[0].color = 0;
-		vertices[0].x = dx; vertices[0].y = 0; vertices[0].z = 0;
-
-		vertices[1].u = start + width; vertices[1].v = SCR_HEIGHT;
-		vertices[1].color = 0;
-		vertices[1].x = dx + width; vertices[1].y = SCR_HEIGHT; vertices[1].z = 0;
-
-		sceGuDrawArray(GU_SPRITES,GU_TEXTURE_16BIT|GU_COLOR_5551|GU_VERTEX_16BIT|GU_TRANSFORM_2D,2,0,vertices);
-	}
-    sceGuFinish();
-    sceGuSync(0,0);
-}
-
-
-void pgScreenFlipV()
-{
-    pgWaitV();
-    pgScreenFlip();
+	if (vsync) sceDisplayWaitVblankStart();
+	show_frame = draw_frame;
+	draw_frame = sceGuSwapBuffers();
 }
 
 void pgGuInit(void)
 {
+	show_frame = (void *)(FRAMESIZE * 0);
+	draw_frame = (void *)(FRAMESIZE * 1);
+	work_frame = (void *)(FRAMESIZE * 2);
+	tex_frame  = (void *)(FRAMESIZE * 3);
+
 	sceGuDisplay(GU_FALSE);
 	sceGuInit();
 
 	sceGuStart(GU_DIRECT, gulist);
-    sceGuDrawBuffer(GU_PSM_5551,(void*)0,BUF_WIDTH);
-    sceGuDispBuffer(SCR_WIDTH,SCR_HEIGHT,(void*)0x44000,BUF_WIDTH);
-    sceGuDepthBuffer((void*)0x88000,BUF_WIDTH);
+	sceGuDrawBuffer(GU_PSM_5551, draw_frame, BUF_WIDTH);
+	sceGuDispBuffer(SCR_WIDTH, SCR_HEIGHT, show_frame, BUF_WIDTH);
 	sceGuOffset(2048 - (SCR_WIDTH / 2), 2048 - (SCR_HEIGHT / 2));
 	sceGuViewport(2048, 2048, SCR_WIDTH, SCR_HEIGHT);
 
@@ -273,8 +290,15 @@ void pgGuInit(void)
 	sceGuScissor(0, 0, SCR_WIDTH, SCR_HEIGHT);
 
 	sceGuDisable(GU_ALPHA_TEST);
+	sceGuAlphaFunc(GU_LEQUAL, 0, 0x01);
+
 	sceGuDisable(GU_BLEND);
+	sceGuBlendFunc(GU_ADD, GU_SRC_ALPHA, GU_ONE_MINUS_SRC_ALPHA, 0, 0);
+
 	sceGuDisable(GU_DEPTH_TEST);
+	sceGuDepthRange(65535, 0);
+	sceGuDepthFunc(GU_GEQUAL);
+	sceGuDepthMask(GU_TRUE);
 
 	sceGuEnable(GU_TEXTURE_2D);
 	sceGuTexMode(GU_PSM_5551, 0, 0, GU_FALSE);
@@ -283,6 +307,9 @@ void pgGuInit(void)
 	sceGuTexFunc(GU_TFX_REPLACE, GU_TCC_RGBA);
 
 	sceGuClutMode(GU_PSM_5551, 0, 0xff, 0);
+
+	sceGuSetDither(&dither_matrix);
+	sceGuDisable(GU_DITHER);
 
 	sceGuClearDepth(0);
 	sceGuClearColor(0);
