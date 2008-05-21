@@ -84,6 +84,7 @@ void wsInit(void)
     IProm.we = 0;
     CProm.data = NULL;
     CProm.we = 0;
+	video_clear_frame(tex_frame);
     if ((ret = fileioOpenRom()))
     {
         if (ret == 4)
@@ -95,7 +96,7 @@ void wsInit(void)
             mh_print(0, 0, "memory error",RGB(255, 255, 255));
         }
         video_copy_rect(tex_frame, draw_frame, &full_rect, &full_rect);
-        pgWaitVn(100);
+        video_wait_vsync_n(100);
         return;
     }
     fileioLoadIProm();
@@ -122,7 +123,7 @@ void wsPdata(void)
     {
         mh_print(0, 0, "memory error",RGB(255, 255, 255));
         video_copy_rect(tex_frame, draw_frame, &full_rect, &full_rect);
-        pgWaitVn(100);
+        video_wait_vsync_n(100);
         return;
     }
     memcpy(Cart + 0x1F080, pdata, size_pdata);

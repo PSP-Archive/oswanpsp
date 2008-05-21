@@ -32,6 +32,10 @@ struct Vertex
 	short x, y, z;
 };
 
+/*--------------------------------------------------------
+	ƒrƒfƒIˆ—‰Šú‰»
+--------------------------------------------------------*/
+
 void pgGuInit(void)
 {
 	draw_frame = (void *)(FRAMESIZE * 0);
@@ -83,16 +87,20 @@ void pgGuInit(void)
 	sceGuDisplay(GU_TRUE);
 }
 
-void pgWaitVn(unsigned long count)
+/*--------------------------------------------------------
+	VSYNC‚ð‘Ò‚Â
+--------------------------------------------------------*/
+
+void video_wait_vsync(void)
+{
+	sceDisplayWaitVblankStart();
+}
+
+void video_wait_vsync_n(unsigned long count)
 {
     for (; count > 0; --count) {
         sceDisplayWaitVblankStart();
     }
-}
-
-void pgWaitV()
-{
-    sceDisplayWaitVblankStart();
 }
 
 /*--------------------------------------------------------

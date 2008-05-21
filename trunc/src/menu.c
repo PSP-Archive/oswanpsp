@@ -4,6 +4,7 @@
 
 #include <pspkernel.h>
 #include <pspctrl.h>
+#include <psppower.h>
 #include <stdio.h>
 #include <string.h>
 #include "fileio.h"
@@ -13,7 +14,7 @@
 #include "debug/debug.h"
 
 #define MAX_LINE 28
-#define MENU_SIZE 7
+#define MENU_SIZE 8
 
 FILELIST FileList[256];
 int FileCount;
@@ -23,6 +24,7 @@ const char *Menu[MENU_SIZE] = {
     "パーソ\ナルデータ",
     "ステートセーブ",
     "ステートロード",
+    NULL,
     NULL,
     NULL,
     "終了"
@@ -35,6 +37,13 @@ const char *VsyncMenu[2] = {
     "Vsync OFF",
     "Vsync ON",
 };
+const char *ClockMenu[4] = {
+    "クロック 222MHz",
+    "クロック 266MHz",
+    "クロック 300MHz",
+    "クロック 333MHz",
+};
+static int Clock = 0;
 
 extern unsigned short *draw_frame;
 extern unsigned short *tex_frame;
@@ -49,6 +58,7 @@ int menuList(void)
 
     Menu[4] = Screen[ScreenSize];
     Menu[5] = VsyncMenu[Vsync];
+    Menu[6] = ClockMenu[Clock];
     menuPrintList(selectItem);
     while (Run)
     {
@@ -82,6 +92,9 @@ int menuList(void)
                 menuConfig(newButton, 1);
                 break;
             case 6:
+                menuConfig(newButton, 2);
+                break;
+            case 7:
                 return 0;
             }
             menuPrintList(selectItem);
@@ -104,6 +117,7 @@ int menuList(void)
             {
                 sceCtrlReadBufferPositive(&pad, 1);
             }
+			video_clear_frame(tex_frame);
             return 3;
         }
         oldButton = newButton;
@@ -475,6 +489,18 @@ void menuConfig(unsigned int oldButton, int mode)
     case 1:
         Vsync = Vsync ? 0 : 1;
         Menu[5] = VsyncMenu[Vsync];
+        break;
+    case 2:
+        Clock++;
+		if (Clock > 3) Clock = 0;
+        Menu[6] = ClockMenu[Clock];
+		switch (Clock)
+		{
+		case 1: scePowerSetClockFrequency(266, 266, 133); break;
+		case 2: scePowerSetClockFrequency(300, 300, 150); break;
+		case 3: scePowerSetClockFrequency(333, 333, 166); break;
+		default: scePowerSetClockFrequency(222, 222, 111); break;
+		}
         break;
     }
 }

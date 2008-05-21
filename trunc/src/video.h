@@ -26,8 +26,8 @@ typedef struct rect_t
 } RECT;
 
 void pgGuInit(void);
-void pgWaitV();
-void pgWaitVn(unsigned long count);
+void video_wait_vsync(void);
+void video_wait_vsync_n(unsigned long count);
 void video_flip_screen(int vsync);
 void video_clear_frame(void *frame);
 void video_clear_screen(void);
