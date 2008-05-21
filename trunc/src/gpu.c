@@ -5,7 +5,7 @@
 #include <pspkernel.h>
 #include <stdio.h>
 #include <string.h>
-#include "pg.h"
+#include "video.h"
 #include "ws.h"
 #include "gpu.h"
 #include "segment.h"

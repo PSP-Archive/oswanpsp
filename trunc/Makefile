@@ -1,5 +1,5 @@
 TARGET = oswanpsp
-OBJS = src/apu.o src/fileio.o src/gpu.o src/main.o src/menu.o src/mon.o src/pg.o src/ws.o \
+OBJS = src/apu.o src/fileio.o src/gpu.o src/main.o src/menu.o src/mon.o src/video.o src/ws.o \
 src/nec/nec.o src/debug/debug.o
 
 INCDIR =

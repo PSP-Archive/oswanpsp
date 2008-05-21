@@ -7,7 +7,7 @@
 #include <string.h>
 #include <malloc.h>
 #include "fileio.h"
-#include "pg.h"
+#include "video.h"
 #include "ws.h"
 #include "gpu.h"
 #include "apu.h"

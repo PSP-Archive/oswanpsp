@@ -8,7 +8,7 @@
 #include <string.h>
 #include "mon.h"
 #include "ws.h"
-#include "pg.h"
+#include "video.h"
 
 extern unsigned short *draw_frame;
 extern unsigned short *tex_frame;
@@ -20,7 +20,7 @@ void monPrintMem(unsigned int offset)
     char buf[256];
     unsigned char* addr = RAM + offset;
 
-    pgFillvram(0);
+    video_clear_frame(tex_frame);
     mh_print(2, FONT_HEIGHT * 0, "ADDRESS: 00 01 02 03 04 05 06 07 08 09 0A 0B 0C 0D 0E 0F",RGB(255, 255, 255));
     for (y = 0; y < 20; y++)
     {
@@ -47,7 +47,7 @@ void monMenu(void)
         newButton = pad.Buttons;
         if (newButton & PSP_CTRL_CROSS)
         {
-            pgFillvram(0);
+            video_clear_frame(tex_frame);
             return;
         }
         if ((newButton & PSP_CTRL_DOWN) && !(oldButton & PSP_CTRL_DOWN))

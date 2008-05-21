@@ -7,7 +7,7 @@
 #include <stdio.h>
 #include <string.h>
 #include "fileio.h"
-#include "pg.h"
+#include "video.h"
 #include "ws.h"
 #include "menu.h"
 #include "debug/debug.h"
@@ -56,7 +56,7 @@ int menuList(void)
         newButton = pad.Buttons;
         if ((newButton & PSP_CTRL_CIRCLE) && !(oldButton & PSP_CTRL_CIRCLE))
         {
-            pgFillvram(0);
+            video_clear_frame(tex_frame);
             switch (selectItem)
             {
             case 0:
@@ -116,7 +116,7 @@ int menuList(void)
 void menuPrintList(int selectItem)
 {
     int i;
-    pgFillvram(0);
+    video_clear_frame(tex_frame);
     mh_print(0, 0, Title,RGB(255, 255, 255));
     for (i = 0; i < MENU_SIZE; i++)
     {
@@ -211,7 +211,7 @@ int menuRomList(unsigned int oldButton)
                 {
                     wsExit();
                 }
-                pgFillvram(0);
+                video_clear_frame(tex_frame);
                 mh_print(50, 50, "Loading...", RGB(255, 255, 255));
                 mh_print(70, 60, FileList[startPos + selectFile].name, RGB(255, 255, 255));
                 video_copy_rect(tex_frame, draw_frame, &full_rect, &full_rect);
@@ -332,7 +332,7 @@ void menuPrintRomList(int startPos, int selectFile)
     int color;
     char str[MAX_PATH];
 
-    pgFillvram(0);
+    video_clear_frame(tex_frame);
     mh_print(0, 0, Title,RGB(255, 255, 255));
     mh_print(0, FONT_HEIGHT, CurDir,RGB(0, 0, 255));
     mh_print(2, (selectFile + 2) * FONT_HEIGHT, "*",RGB(255, 0, 0));
@@ -433,7 +433,7 @@ void menuStateSavePrintList(int index)
     char list[32];
     char date[20];
 
-    pgFillvram(0);
+    video_clear_frame(tex_frame);
     mh_print(0, 0, Title,RGB(255, 255, 255));
     mh_print(0, FONT_HEIGHT, "STATE SLOTS", RGB(0, 0, 255));
     for (i = 0; i < 10; i++)

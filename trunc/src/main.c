@@ -7,7 +7,7 @@
 #include <psppower.h>
 #include <stdio.h>
 #include "fileio.h"
-#include "pg.h"
+#include "video.h"
 #include "menu.h"
 #include "ws.h"
 #include "gpu.h"
@@ -78,7 +78,6 @@ int main(int argc, char *argv[])
     while (Run)
     {
         ret = menuList();
-        pgFillvram(0);
         switch (ret)
         {
         case 0: // Exit
