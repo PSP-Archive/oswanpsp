@@ -3,14 +3,14 @@ OBJS = src/apu.o src/fileio.o src/gpu.o src/main.o src/menu.o src/mon.o src/pg.o
 src/nec/nec.o src/debug/debug.o
 
 INCDIR =
-CFLAGS = -G0 -Wall -O3
+CFLAGS = -Wall -O3
 CXXFLAGS = $(CFLAGS) -fno-exceptions -fno-rtti
 ASFLAGS = $(CFLAGS)
 
 LIBDIR =
 LDFLAGS =
 BUILD_PRX = 1
-PSP_FW_VERSION=371
+PSP_FW_VERSION=352
 LIBS= -lpsppower -lpspgu -lpspaudio
 
 EXTRA_TARGETS = EBOOT.PBP
