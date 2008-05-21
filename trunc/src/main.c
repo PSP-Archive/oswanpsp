@@ -5,7 +5,6 @@
 #include <pspkernel.h>
 #include <pspctrl.h>
 #include <psppower.h>
-#include <pspgu.h>
 #include <stdio.h>
 #include "fileio.h"
 #include "pg.h"
@@ -98,7 +97,7 @@ int main(int argc, char *argv[])
         }
         if (Cart)
         {
-            scePowerSetClockFrequency(333, 333, 166);
+            //scePowerSetClockFrequency(333, 333, 166);
             while (Run)
             {
                 wsExecute();
@@ -120,7 +119,7 @@ int main(int argc, char *argv[])
                     sceCtrlReadBufferPositive(&Pad, 1);
                 }
             }
-            scePowerSetClockFrequency(222, 222, 111);
+            //scePowerSetClockFrequency(222, 222, 111);
         }
 		video_flip_screen(1);
     }

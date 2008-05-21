@@ -32,9 +32,60 @@ struct Vertex
 	short x, y, z;
 };
 
+void pgGuInit(void)
+{
+	draw_frame = (void *)(FRAMESIZE * 0);
+	show_frame = (void *)(FRAMESIZE * 1);
+	work_frame = (void *)(FRAMESIZE * 2);
+	tex_frame  = (void *)(FRAMESIZE * 3);
+
+	sceGuDisplay(GU_FALSE);
+	sceGuInit();
+
+	sceGuStart(GU_DIRECT, gulist);
+	sceGuDrawBuffer(GU_PSM_5551, draw_frame, BUF_WIDTH);
+	sceGuDispBuffer(SCR_WIDTH, SCR_HEIGHT, show_frame, BUF_WIDTH);
+	sceGuOffset(2048 - (SCR_WIDTH / 2), 2048 - (SCR_HEIGHT / 2));
+	sceGuViewport(2048, 2048, SCR_WIDTH, SCR_HEIGHT);
+
+	sceGuEnable(GU_SCISSOR_TEST);
+	sceGuScissor(0, 0, SCR_WIDTH, SCR_HEIGHT);
+
+	sceGuDisable(GU_ALPHA_TEST);
+	sceGuAlphaFunc(GU_LEQUAL, 0, 0x01);
+
+	sceGuDisable(GU_BLEND);
+	sceGuBlendFunc(GU_ADD, GU_SRC_ALPHA, GU_ONE_MINUS_SRC_ALPHA, 0, 0);
+
+	sceGuDisable(GU_DEPTH_TEST);
+	sceGuDepthRange(65535, 0);
+	sceGuDepthFunc(GU_GEQUAL);
+	sceGuDepthMask(GU_TRUE);
+
+	sceGuEnable(GU_TEXTURE_2D);
+	sceGuTexMode(GU_PSM_5551, 0, 0, GU_FALSE);
+	sceGuTexScale(1.0f / BUF_WIDTH, 1.0f / BUF_WIDTH);
+	sceGuTexOffset(0, 0);
+	sceGuTexFunc(GU_TFX_REPLACE, GU_TCC_RGBA);
+
+	sceGuClutMode(GU_PSM_5551, 0, 0xff, 0);
+
+	sceGuSetDither(&dither_matrix);
+	sceGuDisable(GU_DITHER);
+
+	sceGuClearDepth(0);
+	sceGuClearColor(0);
+
+	sceGuFinish();
+	sceGuSync(0, GU_SYNC_FINISH);
+
+	sceDisplayWaitVblankStart();
+	sceGuDisplay(GU_TRUE);
+}
+
 void pgWaitVn(unsigned long count)
 {
-    for (; count>0; --count) {
+    for (; count > 0; --count) {
         sceDisplayWaitVblankStart();
     }
 }
@@ -54,9 +105,9 @@ void pgFillvram(unsigned long color)
     unsigned short *vptr0;       //pointer to vram
     unsigned long i;
 
-    vptr0=pgGetVramAddr(0,0);
-    for (i=0; i<FRAMESIZE/2; i++) {
-        *vptr0=color;
+    vptr0 = pgGetVramAddr(0,0);
+    for (i = 0; i < FRAMESIZE; i++) {
+        *vptr0 = color;
         vptr0++;
     }
 }
@@ -72,11 +123,11 @@ void Draw_Char_Hankaku(int x,int y,const unsigned char c,int col) {
     ch = c;
 
     // mapping
-    if (ch<0x20)
+    if (ch < 0x20)
         ch = 0;
-    else if (ch<0x80)
+    else if (ch < 0x80)
         ch -= 0x20;
-    else if (ch<0xa0)
+    else if (ch < 0xa0)
         ch = 0;
     else
         ch -= 0x40;
@@ -85,9 +136,9 @@ void Draw_Char_Hankaku(int x,int y,const unsigned char c,int col) {
 
     // draw
     vr = pgGetVramAddr(x,y);
-    for(y1=0;y1<10;y1++) {
+    for(y1 = 0; y1 < 10; y1++) {
         pt = *fnt++;
-        for(x1=0;x1<5;x1++) {
+        for(x1 = 0; x1 < 5; x1++) {
             if (pt & 1)
                 *vr = col;
             else
@@ -95,7 +146,7 @@ void Draw_Char_Hankaku(int x,int y,const unsigned char c,int col) {
             vr++;
             pt = pt >> 1;
         }
-        vr += LINESIZE-5;
+        vr += LINESIZE - 5;
     }
 }
 
@@ -137,35 +188,35 @@ void Draw_Char_Zenkaku(int x,int y,const unsigned char u,unsigned char d,int col
     code = (code<<8) + d;
 
     // SJIS‚©‚çEUC‚É•ÏŠ·
-    if(code >= 0xE000) code-=0x4000;
-    code = ((((code>>8)&0xFF)-0x81)<<9) + (code&0x00FF);
+    if(code >= 0xE000) code -= 0x4000;
+    code = ((((code >> 8) & 0xFF) - 0x81) << 9) + (code&0x00FF);
     if((code & 0x00FF) >= 0x80) code--;
     if((code & 0x00FF) >= 0x9E) code+=0x62;
-    else code-=0x40;
+    else code -= 0x40;
     code += 0x2121 + 0x8080;
 
     // EUC‚©‚çŒb—œ¹ƒtƒHƒ“ƒg‚Ì”Ô†‚ð¶¬
-    n = (((code>>8)&0xFF)-0xA1)*(0xFF-0xA1)
-        + (code&0xFF)-0xA1;
+    n = (((code >> 8) & 0xFF) - 0xA1) * (0xFF - 0xA1)
+        + (code & 0xFF) - 0xA1;
     j=0;
     while(font404[j]) {
         if(code >= font404[j]) {
-            if(code <= font404[j]+font404[j+1]-1) {
+            if(code <= font404[j] + font404[j + 1] - 1) {
                 n = -1;
                 break;
             } else {
-                n-=font404[j+1];
+                n -= font404[j + 1];
             }
         }
-        j+=2;
+        j += 2;
     }
-    fnt = (unsigned short *)&zenkaku_font10[n*10];
+    fnt = (unsigned short *)&zenkaku_font10[n * 10];
 
     // draw
     vr = pgGetVramAddr(x,y);
-    for(y1=0;y1<10;y1++) {
+    for(y1 = 0; y1 < 10; y1++) {
         pt = *fnt++;
-        for(x1=0;x1<10;x1++) {
+        for(x1 = 0; x1 < 10; x1++) {
             if (pt & 1)
                 *vr = col;
             else
@@ -173,7 +224,7 @@ void Draw_Char_Zenkaku(int x,int y,const unsigned char u,unsigned char d,int col
             vr++;
             pt = pt >> 1;
         }
-        vr += LINESIZE-10;
+        vr += LINESIZE - 10;
     }
 }
 
@@ -183,16 +234,16 @@ void mh_print(int x,int y,const char *str,int color) {
 
     while(*str != 0) {
         ch = (unsigned char)*str++;
-        if (bef!=0) {
-            Draw_Char_Zenkaku(x,y,bef,ch,color);
-            x+=10;
-            bef=0;
+        if (bef != 0) {
+            Draw_Char_Zenkaku(x, y, bef, ch, color);
+            x += 10;
+            bef = 0;
         } else {
-            if (((ch>=0x80) && (ch<0xa0)) || (ch>=0xe0)) {
+            if (((ch >= 0x80) && (ch < 0xa0)) || (ch >= 0xe0)) {
                 bef = ch;
             } else {
-                Draw_Char_Hankaku(x,y,ch,color);
-                x+=5;
+                Draw_Char_Hankaku(x, y, ch, color);
+                x += 5;
             }
         }
     }
@@ -268,55 +319,4 @@ void video_flip_screen(int vsync)
 	if (vsync) sceDisplayWaitVblankStart();
 	show_frame = draw_frame;
 	draw_frame = sceGuSwapBuffers();
-}
-
-void pgGuInit(void)
-{
-	show_frame = (void *)(FRAMESIZE * 0);
-	draw_frame = (void *)(FRAMESIZE * 1);
-	work_frame = (void *)(FRAMESIZE * 2);
-	tex_frame  = (void *)(FRAMESIZE * 3);
-
-	sceGuDisplay(GU_FALSE);
-	sceGuInit();
-
-	sceGuStart(GU_DIRECT, gulist);
-	sceGuDrawBuffer(GU_PSM_5551, draw_frame, BUF_WIDTH);
-	sceGuDispBuffer(SCR_WIDTH, SCR_HEIGHT, show_frame, BUF_WIDTH);
-	sceGuOffset(2048 - (SCR_WIDTH / 2), 2048 - (SCR_HEIGHT / 2));
-	sceGuViewport(2048, 2048, SCR_WIDTH, SCR_HEIGHT);
-
-	sceGuEnable(GU_SCISSOR_TEST);
-	sceGuScissor(0, 0, SCR_WIDTH, SCR_HEIGHT);
-
-	sceGuDisable(GU_ALPHA_TEST);
-	sceGuAlphaFunc(GU_LEQUAL, 0, 0x01);
-
-	sceGuDisable(GU_BLEND);
-	sceGuBlendFunc(GU_ADD, GU_SRC_ALPHA, GU_ONE_MINUS_SRC_ALPHA, 0, 0);
-
-	sceGuDisable(GU_DEPTH_TEST);
-	sceGuDepthRange(65535, 0);
-	sceGuDepthFunc(GU_GEQUAL);
-	sceGuDepthMask(GU_TRUE);
-
-	sceGuEnable(GU_TEXTURE_2D);
-	sceGuTexMode(GU_PSM_5551, 0, 0, GU_FALSE);
-	sceGuTexScale(1.0f / BUF_WIDTH, 1.0f / BUF_WIDTH);
-	sceGuTexOffset(0, 0);
-	sceGuTexFunc(GU_TFX_REPLACE, GU_TCC_RGBA);
-
-	sceGuClutMode(GU_PSM_5551, 0, 0xff, 0);
-
-	sceGuSetDither(&dither_matrix);
-	sceGuDisable(GU_DITHER);
-
-	sceGuClearDepth(0);
-	sceGuClearColor(0);
-
-	sceGuFinish();
-	sceGuSync(0, GU_SYNC_FINISH);
-
-	sceDisplayWaitVblankStart();
-	sceGuDisplay(GU_TRUE);
 }

@@ -4,7 +4,6 @@
 
 #include <pspkernel.h>
 #include <pspctrl.h>
-#include <pspgu.h>
 #include <stdio.h>
 #include <string.h>
 #include "mon.h"

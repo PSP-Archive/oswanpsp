@@ -5,7 +5,6 @@
 #include <pspkernel.h>
 #include <pspdisplay.h>
 #include <pspctrl.h>
-#include <pspgu.h>
 #include <stdio.h>
 #include <malloc.h>
 #include <time.h>
@@ -849,21 +848,14 @@ int wsExecute(void)
     int i;
     char buf[256];
     int render;
-	RECT src_rect;
-	RECT dst_rect;
+	RECT src_rect = {64,0,64+240,144};
+	RECT dst_rect = {120,64,120+240,64+144};
+	RECT wide_rect = {20,0,20+453,SCR_HEIGHT};
 
-	src_rect.left = 8;
-	src_rect.top = 0;
-	src_rect.right = 248;
-	src_rect.bottom = 144;
-	dst_rect.left = 120;
-	dst_rect.top = 64;
-	dst_rect.right = 120+240;
-	dst_rect.bottom = 64+144;
     for (i = 4; i--;)
     {
         render = wsFrameSkipSound();
-     //   render = 1;
+        //render = 1;
         wsExecuteFrame(render);
         WsFrame++;
         if (render)
@@ -874,7 +866,14 @@ int wsExecute(void)
             sprintf(buf, "%d", Fps - Drop);
             mh_print(0, 10, buf,RGB(255, 255, 255));
 			video_copy_rect(tex_frame, draw_frame, &full_rect, &full_rect);
-			video_copy_rect(work_frame, draw_frame, &src_rect, &dst_rect);
+			if (ScreenSize)
+			{
+				video_copy_rect(work_frame, draw_frame, &src_rect, &wide_rect);
+			}
+			else
+			{
+				video_copy_rect(work_frame, draw_frame, &src_rect, &dst_rect);
+			}
 			video_flip_screen(Vsync);
         }
         else

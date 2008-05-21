@@ -418,6 +418,8 @@ void menuStateList(unsigned int oldButton, int save)
             menuStateSavePrintList(selectItem);
         }
         oldButton = newButton;
+        video_copy_rect(tex_frame, draw_frame, &full_rect, &full_rect);
+		video_flip_screen(1);
     }
     return;
 }
@@ -460,7 +462,6 @@ void menuStateSavePrintList(int index)
             mh_print(10, FONT_HEIGHT * (i + 2), list, color);
         }
     }
-    video_copy_rect(tex_frame, draw_frame, &full_rect, &full_rect);
 }
 
 void menuConfig(unsigned int oldButton, int mode)

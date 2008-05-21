@@ -21,7 +21,6 @@ unsigned char HflippedTileCache[1024*8*8];
 unsigned char MonoModifiedTile[1024]; //512 * 2bank(sorobangu)
 unsigned char ColorModifiedTile[1024];
 unsigned long TransparentTile[1024][8];
-unsigned short FrameBuffer[(224 + 16) * 144 + 16];
 char LMask[256 + 8];
 char WMaskIn[256];
 char WMaskAll[256];
@@ -34,7 +33,6 @@ void gpuInit(void)
     memset(HflippedTileCache, 0, 1024*8*8);
     memset(MonoModifiedTile, 1, 1024);
     memset(ColorModifiedTile, 1, 1024);
-    memset(FrameBuffer, 0, (240*144+16)*2);
 }
 
 unsigned char* gpuMonoTileCache(unsigned short tileInfo, int row, int bank)
@@ -150,7 +148,7 @@ void gpuRenderFGMono(void)
     map = FgMap + ((scrollY & 0xF8) << 2); // scrollY>>3 <<5
     tileX = IO[0x12] & 0x07;
     tileY = scrollY & 0x07;
-    vptr = GU_FRAME_ADDR(work_frame) + IO[0x02] * BUF_WIDTH + 8 - tileX;
+    vptr = GU_FRAME_ADDR(work_frame) + (IO[0x02] << 9) + 64 - tileX;
     layerMask = LMask + 8 - tileX;
     for (j = -tileX; j < 224; j += 8) {
         color = gpuMonoTileCache(map[scrollX & 0x1F], tileY, map[scrollX & 0x1F] & 0x2000);
@@ -256,7 +254,7 @@ void gpuRenderScanLineMono(void)
         map = BgMap + ((scrollY & 0xF8) << 2); // scrollY>>3 <<5
         tileX = IO[0x10] & 0x07;
         tileY = scrollY & 0x07;
-        vptr = GU_FRAME_ADDR(work_frame) + IO[0x02] * BUF_WIDTH + 8 - tileX;
+        vptr = GU_FRAME_ADDR(work_frame) + (IO[0x02] << 9) + 64 - tileX;
         for (j = -tileX; j < 224; j+=8) {
             color = gpuMonoTileCache(map[scrollX & 0x1F], tileY, map[scrollX & 0x1F] & 0x2000);
             pal = (map[scrollX & 0x1F] >> 9) & 0x0F;
@@ -289,7 +287,7 @@ void gpuRenderScanLineMono(void)
         }
     }
     else {
-        vptr = GU_FRAME_ADDR(work_frame) + IO[0x02] * BUF_WIDTH + 8;
+        vptr = GU_FRAME_ADDR(work_frame) + (IO[0x02] << 9) + 64;
         for (i = 0; i < 224; i++) {
             *vptr++ = baseColor;
         }
@@ -365,7 +363,7 @@ void gpuRenderScanLineMono(void)
             if (x + nbPixels > 224) {
                 nbPixels = (224 - x);
             }
-            vptr = GU_FRAME_ADDR(work_frame) + IO[0x02] * BUF_WIDTH + 8 + x;
+            vptr = GU_FRAME_ADDR(work_frame) + (IO[0x02] << 9) + 64 + x;
             layerMask = LMask + 8 + x;
             if(IO[0x00] & 0x08) {
                 windowMask = WMaskIn + x;
@@ -539,7 +537,7 @@ void gpuRenderFGColor(void)
     map = FgMap + ((scrollY & 0xF8) << 2); // scrollY>>3 <<5
     tileX = IO[0x12] & 0x07;
     tileY = scrollY & 0x07;
-    vptr = GU_FRAME_ADDR(work_frame) + IO[0x02] * BUF_WIDTH + 8 - tileX;
+    vptr = GU_FRAME_ADDR(work_frame) + (IO[0x02] << 9) + 64 - tileX;
     layerMask = LMask + 8 - tileX;
     for (j = -tileX; j < 224; j += 8) {
         color = gpuColorTileCache(map[scrollX & 0x1F], tileY, map[scrollX & 0x1F] & 0x2000);
@@ -608,7 +606,7 @@ void gpuRenderScanLineColor(void)
         map = BgMap + ((scrollY & 0xF8) << 2); // scrollY>>3 * 32
         tileX = IO[0x10] & 0x07;
         tileY = scrollY & 0x07;
-        vptr = GU_FRAME_ADDR(work_frame) + IO[0x02] * BUF_WIDTH + 8 - tileX;
+        vptr = GU_FRAME_ADDR(work_frame) + (IO[0x02] << 9) + 64 - tileX;
         for (j = -tileX; j < 224; j += 8) {
             color = gpuColorTileCache(map[scrollX & 0x1F], tileY, map[scrollX & 0x1F] & 0x2000);
             if (color) {
@@ -639,7 +637,7 @@ void gpuRenderScanLineColor(void)
         }
     }
     else {
-        vptr = GU_FRAME_ADDR(work_frame) + IO[0x02] * BUF_WIDTH + 8;
+        vptr = GU_FRAME_ADDR(work_frame) + (IO[0x02] << 9) + 64;
         for (i = 0; i < 224; i++) {
             *vptr++ = baseColor;
         }
@@ -714,7 +712,7 @@ void gpuRenderScanLineColor(void)
             if (x + nbPixels > 224) {
                 nbPixels = (224 - x);
             }
-            vptr = GU_FRAME_ADDR(work_frame) + IO[0x02] * BUF_WIDTH + 8 + x;
+            vptr = GU_FRAME_ADDR(work_frame) + (IO[0x02] << 9) + 64 + x;
             layerMask = LMask + 8 + x;
             if(IO[0x00] & 0x08) {
                 windowMask = WMaskIn + x;
@@ -739,7 +737,7 @@ void gpuSetSegment(void)
     unsigned short *vptr, *seg;
     int x, y;
 
-    vptr = FrameBuffer + 8 + 224;
+    vptr = GU_FRAME_ADDR(work_frame) + 64 + 224;
     for (y = 0; y < 144;)
     {
         if (y == 0 && (IO[0x15] & 0x20)) seg = circle3;
@@ -769,7 +767,7 @@ void gpuSetSegment(void)
                 *vptr++ = *seg++;
                 *vptr++ = *seg++;
                 *vptr++ = *seg++;
-                vptr += 224;
+                vptr += (512-16);
                 y++;
             }
         }
@@ -791,7 +789,7 @@ void gpuSetSegment(void)
             *vptr++ = 0;
             *vptr++ = 0;
             *vptr++ = 0;
-            vptr += 224;
+            vptr += (512-16);
             y++;
         }
     }
