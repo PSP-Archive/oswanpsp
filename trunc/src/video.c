@@ -1,5 +1,7 @@
 /*
 * $Id$
+*
+* NJ氏のソースを使用させていただいてます
 */
 
 #include <pspkernel.h>
@@ -227,6 +229,204 @@ void video_copy_rect(void *src, void *dst, RECT *src_rect, RECT *dst_rect)
 	for (j = 0; (j + SLICE_SIZE) < sw; j = j + SLICE_SIZE)
 	{
 		vertices = (struct Vertex *)sceGuGetMemory(2 * sizeof(struct Vertex));
+
+		vertices[0].u = src_rect->left + j;
+		vertices[0].v = src_rect->top;
+		vertices[0].x = dst_rect->left + j * dw / sw;
+		vertices[0].y = dst_rect->top;
+
+		vertices[1].u = src_rect->left + j + SLICE_SIZE;
+		vertices[1].v = src_rect->bottom;
+		vertices[1].x = dst_rect->left + (j + SLICE_SIZE) * dw / sw;
+		vertices[1].y = dst_rect->bottom;
+
+		sceGuDrawArray(GU_SPRITES, TEXTURE_FLAGS, 2, NULL, vertices);
+	}
+
+	if (j < sw)
+	{
+		vertices = (struct Vertex *)sceGuGetMemory(2 * sizeof(struct Vertex));
+
+		vertices[0].u = src_rect->left + j;
+		vertices[0].v = src_rect->top;
+		vertices[0].x = dst_rect->left + j * dw / sw;
+		vertices[0].y = dst_rect->top;
+
+		vertices[1].u = src_rect->right;
+		vertices[1].v = src_rect->bottom;
+		vertices[1].x = dst_rect->right;
+		vertices[1].y = dst_rect->bottom;
+
+		sceGuDrawArray(GU_SPRITES, TEXTURE_FLAGS, 2, NULL, vertices);
+	}
+
+	sceGuFinish();
+	sceGuSync(0, GU_SYNC_FINISH);
+}
+
+/*--------------------------------------------------------
+	矩形範囲を左右反転してコピー
+--------------------------------------------------------*/
+
+void video_copy_rect_flip(void *src, void *dst, RECT *src_rect, RECT *dst_rect)
+{
+	short j, sw, dw, sh, dh;
+	struct Vertex *vertices;
+
+	sw = src_rect->right - src_rect->left;
+	dw = dst_rect->right - dst_rect->left;
+	sh = src_rect->bottom - src_rect->top;
+	dh = dst_rect->bottom - dst_rect->top;
+
+	sceGuStart(GU_DIRECT, gulist);
+
+	sceGuDrawBufferList(GU_PSM_5551, dst, BUF_WIDTH);
+	sceGuScissor(dst_rect->left, dst_rect->top, dst_rect->right, dst_rect->bottom);
+	sceGuDisable(GU_ALPHA_TEST);
+
+	sceGuTexMode(GU_PSM_5551, 0, 0, GU_FALSE);
+	sceGuTexImage(0, BUF_WIDTH, BUF_WIDTH, BUF_WIDTH, GU_FRAME_ADDR(src));
+	if (sw == dw && sh == dh)
+		sceGuTexFilter(GU_NEAREST, GU_NEAREST);
+	else
+		sceGuTexFilter(GU_LINEAR, GU_LINEAR);
+
+	for (j = 0; (j + SLICE_SIZE) < sw; j = j + SLICE_SIZE)
+	{
+    	vertices = (struct Vertex *)sceGuGetMemory(2 * sizeof(struct Vertex));
+
+		vertices[0].u = src_rect->left + j;
+		vertices[0].v = src_rect->top;
+		vertices[0].x = dst_rect->right - j * dw / sw;
+		vertices[0].y = dst_rect->bottom;
+
+		vertices[1].u = src_rect->left + j + SLICE_SIZE;
+		vertices[1].v = src_rect->bottom;
+		vertices[1].x = dst_rect->right - (j + SLICE_SIZE) * dw / sw;
+		vertices[1].y = dst_rect->top;
+
+		sceGuDrawArray(GU_SPRITES, TEXTURE_FLAGS, 2, NULL, vertices);
+	}
+
+	if (j < sw)
+	{
+		vertices = (struct Vertex *)sceGuGetMemory(2 * sizeof(struct Vertex));
+
+		vertices[0].u = src_rect->left + j;
+		vertices[0].v = src_rect->top;
+		vertices[0].x = dst_rect->right - j * dw / sw;
+		vertices[0].y = dst_rect->bottom;
+
+		vertices[1].u = src_rect->right;
+		vertices[1].v = src_rect->bottom;
+		vertices[1].x = dst_rect->left;
+		vertices[1].y = dst_rect->top;
+
+		sceGuDrawArray(GU_SPRITES, TEXTURE_FLAGS, 2, NULL, vertices);
+	}
+
+	sceGuFinish();
+	sceGuSync(0, GU_SYNC_FINISH);
+}
+
+
+/*--------------------------------------------------------
+	矩形範囲を270度回転してコピー
+--------------------------------------------------------*/
+
+void video_copy_rect_rotate(void *src, void *dst, RECT *src_rect, RECT *dst_rect)
+{
+	short j, sw, dw, sh, dh;
+	struct Vertex *vertices;
+
+	sw = src_rect->right - src_rect->left;
+	dw = dst_rect->right - dst_rect->left;
+	sh = src_rect->bottom - src_rect->top;
+	dh = dst_rect->bottom - dst_rect->top;
+
+	sceGuStart(GU_DIRECT, gulist);
+
+	sceGuDrawBufferList(GU_PSM_5551, dst, BUF_WIDTH);
+	sceGuScissor(dst_rect->left, dst_rect->top, dst_rect->right, dst_rect->bottom);
+	sceGuDisable(GU_ALPHA_TEST);
+
+	sceGuTexMode(GU_PSM_5551, 0, 0, GU_FALSE);
+	sceGuTexImage(0, BUF_WIDTH, BUF_WIDTH, BUF_WIDTH, GU_FRAME_ADDR(src));
+	if (sw == dh && sh == dw)
+		sceGuTexFilter(GU_NEAREST, GU_NEAREST);
+	else
+		sceGuTexFilter(GU_LINEAR, GU_LINEAR);
+
+	vertices = (struct Vertex *)sceGuGetMemory(2 * sizeof(struct Vertex));
+
+	for (j = 0; (j + SLICE_SIZE) < sw; j = j + SLICE_SIZE)
+	{
+		vertices = (struct Vertex *)sceGuGetMemory(2 * sizeof(struct Vertex));
+
+		vertices[0].u = src_rect->right - j;
+		vertices[0].v = src_rect->bottom;
+		vertices[0].x = dst_rect->right;
+		vertices[0].y = dst_rect->top - j * dh / sw;
+
+		vertices[1].u = src_rect->right - j + SLICE_SIZE;
+		vertices[1].v = src_rect->top;
+		vertices[1].x = dst_rect->right;
+		vertices[1].y = dst_rect->bottom - (j + SLICE_SIZE) * dh / sw;
+
+		sceGuDrawArray(GU_SPRITES, TEXTURE_FLAGS, 2, NULL, vertices);
+	}
+
+	if (j < sw)
+	{
+		vertices = (struct Vertex *)sceGuGetMemory(2 * sizeof(struct Vertex));
+
+		vertices[0].u = src_rect->right + j;
+		vertices[0].v = src_rect->bottom;
+		vertices[0].x = dst_rect->right;
+		vertices[0].y = dst_rect->top - j * dh / sw;
+
+		vertices[1].u = src_rect->left;
+		vertices[1].v = src_rect->top;
+		vertices[1].x = dst_rect->left;
+		vertices[1].y = dst_rect->bottom;
+
+		sceGuDrawArray(GU_SPRITES, TEXTURE_FLAGS, 2, NULL, vertices);
+	}
+
+	sceGuFinish();
+	sceGuSync(0, GU_SYNC_FINISH);
+}
+
+
+/*--------------------------------------------------------
+	テクスチャを矩形範囲を指定して描画
+--------------------------------------------------------*/
+
+void video_draw_texture(unsigned long src_fmt, unsigned long dst_fmt, void *src, void *dst, RECT *src_rect, RECT *dst_rect)
+{
+	int j, sw, dw, sh, dh;
+	struct Vertex *vertices;
+
+	sw = src_rect->right - src_rect->left;
+	dw = dst_rect->right - dst_rect->left;
+	sh = src_rect->bottom - src_rect->top;
+	dh = dst_rect->bottom - dst_rect->top;
+
+	sceGuStart(GU_DIRECT, gulist);
+
+	sceGuDrawBufferList(dst_fmt, dst, BUF_WIDTH);
+	sceGuScissor(dst_rect->left, dst_rect->top, dst_rect->right, dst_rect->bottom);
+
+	sceGuTexMode(src_fmt, 0, 0, GU_FALSE);
+	sceGuTexImage(0, BUF_WIDTH, BUF_WIDTH, BUF_WIDTH, GU_FRAME_ADDR(src));
+	if (sw == dw && sh == dh)
+		sceGuTexFilter(GU_NEAREST, GU_NEAREST);
+	else
+		sceGuTexFilter(GU_LINEAR, GU_LINEAR);
+
+	for (j = 0; (j + SLICE_SIZE) < sw; j = j + SLICE_SIZE)
+	{
+    	vertices = (struct Vertex *)sceGuGetMemory(2 * sizeof(struct Vertex));
 
 		vertices[0].u = src_rect->left + j;
 		vertices[0].v = src_rect->top;

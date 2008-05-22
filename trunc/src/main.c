@@ -78,6 +78,7 @@ int main(int argc, char *argv[])
     while (Run)
     {
         ret = menuList();
+		video_clear_screen();
         switch (ret)
         {
         case 0: // Exit
@@ -100,27 +101,44 @@ int main(int argc, char *argv[])
             {
                 wsExecute();
                 sceCtrlReadBufferPositive(&Pad, 1);
+				// L + SELECT : メニュー画面へ
                 if ((Pad.Buttons & PSP_CTRL_LTRIGGER) && (Pad.Buttons & PSP_CTRL_SELECT))
                 {
                     break;
                 }
+				// L + R : XキーとYキーの割り当てを変更(X=矢印,Y=アナログ)<=>(X=アナログ,Y=矢印)
                 else if ((Pad.Buttons & PSP_CTRL_LTRIGGER) && (Pad.Buttons & PSP_CTRL_RTRIGGER))
                 {
                     Cursor = (Cursor) ? 0 : 1;
                 }
+				// L + □ : メモリ表示（デバッグ用）
                 else if ((Pad.Buttons & PSP_CTRL_LTRIGGER) && (Pad.Buttons & PSP_CTRL_SQUARE))
                 {
                     monMenu();
                 }
-                while ((Pad.Buttons & PSP_CTRL_LTRIGGER) && (Pad.Buttons & PSP_CTRL_CIRCLE))
+				// L + ○ : Pause
+				else if ((Pad.Buttons & PSP_CTRL_LTRIGGER) && (Pad.Buttons & PSP_CTRL_CIRCLE))
                 {
-                    sceCtrlReadBufferPositive(&Pad, 1);
+					// L+○ボタンが押されている間ループ
+					while ((Pad.Buttons & PSP_CTRL_LTRIGGER) && (Pad.Buttons & PSP_CTRL_CIRCLE))
+					{
+						sceCtrlReadBufferPositive(&Pad, 1);
+					}
+					// L+○ボタンが押されるまでループ
+					while (!((Pad.Buttons & PSP_CTRL_LTRIGGER) && (Pad.Buttons & PSP_CTRL_CIRCLE)))
+					{
+						sceCtrlReadBufferPositive(&Pad, 1);
+					}
+					// L+○ボタンが押されている間ループ
+					while ((Pad.Buttons & PSP_CTRL_LTRIGGER) && (Pad.Buttons & PSP_CTRL_CIRCLE))
+					{
+						sceCtrlReadBufferPositive(&Pad, 1);
+					}
                 }
             }
-            scePowerSetClockFrequency(222, 222, 111);
         }
-		video_flip_screen(1);
     }
+	scePowerSetClockFrequency(222, 222, 111);
     if (Cart)
     {
         wsExit();

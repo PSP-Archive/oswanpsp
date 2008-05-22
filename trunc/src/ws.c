@@ -99,6 +99,7 @@ void wsInit(void)
         video_wait_vsync_n(100);
         return;
     }
+	video_clear_screen();
     fileioLoadIProm();
     fileioLoadData();
     memset(RAM, 0, 0x10000);
@@ -309,6 +310,10 @@ void wsWritePort(unsigned char port,unsigned char val)
                     BgMap = (unsigned short*)(RAM + ((val & 0x0F) << 11));
                     FgMap = (unsigned short*)(RAM + ((val & 0xF0) << 7));
                     break;
+        case 0x15:
+                    if (val & 2) Cursor = 1;
+					else if (val & 4) Cursor = 0;
+                    break;
         case 0x1C:
         case 0x1D:
         case 0x1E:
@@ -494,14 +499,16 @@ void wsWritePort(unsigned char port,unsigned char val)
                     return;
         case 0xB5:
                     IO[0xB5] = val & 0xF0;
-                    // Buttons
+                    // 0x40 : Buttons
                     if (IO[0xB5] & 0x40) IO[0xB5] |= ((Pad.Buttons >> 11) & 0x0C) | ((Pad.Buttons >> 2) & 2);
+					// 0x20 : X cursor
+					// 0x10 : Y cursor
                     if (Cursor) {
-                        if (IO[0xB5] & 0x10) IO[0xB5] |= (Pad.Buttons >> 4) & 0x0F;
                         if (IO[0xB5] & 0x20) IO[0xB5] |= ((Pad.Lx>0xC0)<<1) | (Pad.Lx<0x40)<<3 | (Pad.Ly>0xC0)<<2 | (Pad.Ly<0x40);
+                        if (IO[0xB5] & 0x10) IO[0xB5] |= (Pad.Buttons >> 4) & 0x0F;
                     }
                     else {
-                        if (IO[0xB5] & 0x20) IO[0xB5] |= (Pad.Buttons >> 4) & 0x0F;
+                        if (IO[0xB5] & 0x20) IO[0xB5] |= (Pad.Buttons >> 4) & 0x0F; 
                         if (IO[0xB5] & 0x10) IO[0xB5] |= ((Pad.Lx>0xC0)<<1) | (Pad.Lx<0x40)<<3 | (Pad.Ly>0xC0)<<2 | (Pad.Ly<0x40);
                     }
                     return;
@@ -803,7 +810,7 @@ int wsExecuteFrame(int render)
             vblankCount++;
             // 0xAA‚Í4ƒoƒCƒg‹«ŠE‚É‡‚í‚È‚¢
             //*(unsigned long*)(IO+0xAA) = vblankCount;
-            *(unsigned short*)(IO+0xAA) = vblankCount;
+            *(unsigned short*)(IO+0xAA) = vblankCount & 0xFFFF;
             *(unsigned short*)(IO+0xAC) = vblankCount >> 16;
             // VBlank Begin Interrupt
             IO[0xb6] |= 0x40;
@@ -851,7 +858,8 @@ int wsExecute(void)
     int render;
 	RECT src_rect = {64,0,64+240,144};
 	RECT dst_rect = {120,64,120+240,64+144};
-	RECT wide_rect = {20,0,20+453,SCR_HEIGHT};
+	RECT large_rect = {20,0,20+453,SCR_HEIGHT};
+	RECT fps_rect = {0,0,64,64};
 
     for (i = 4; i--;)
     {
@@ -862,14 +870,14 @@ int wsExecute(void)
         if (render)
         {
             gpuSetSegment();
-            sprintf(buf, "%d", Fps);
+            sprintf(buf, "%02d", Fps);
             mh_print(0, 0, buf,RGB(255, 255, 255));
-            sprintf(buf, "%d", Fps - Drop);
+            sprintf(buf, "%02d", Fps - Drop);
             mh_print(0, 10, buf,RGB(255, 255, 255));
-			video_copy_rect(tex_frame, draw_frame, &full_rect, &full_rect);
+			video_copy_rect(tex_frame, draw_frame, &fps_rect, &fps_rect);
 			if (ScreenSize)
 			{
-				video_copy_rect(work_frame, draw_frame, &src_rect, &wide_rect);
+				video_copy_rect(work_frame, draw_frame, &src_rect, &large_rect);
 			}
 			else
 			{
