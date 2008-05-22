@@ -46,8 +46,6 @@ const char *ClockMenu[4] = {
 static int Clock = 0;
 
 extern unsigned short *draw_frame;
-extern unsigned short *tex_frame;
-extern RECT full_rect;
 
 int menuList(void)
 {
@@ -66,7 +64,6 @@ int menuList(void)
         newButton = pad.Buttons;
         if ((newButton & PSP_CTRL_CIRCLE) && !(oldButton & PSP_CTRL_CIRCLE))
         {
-            video_clear_frame(tex_frame);
             switch (selectItem)
             {
             case 0:
@@ -117,7 +114,6 @@ int menuList(void)
             {
                 sceCtrlReadBufferPositive(&pad, 1);
             }
-			video_clear_frame(tex_frame);
             return 3;
         }
         oldButton = newButton;
@@ -128,13 +124,14 @@ int menuList(void)
 void menuPrintList(int selectItem)
 {
     int i;
+	video_clear_frame(draw_frame);
 	mh_start();
     mh_print(0, 0, Title, WHITE);
     for (i = 0; i < MENU_SIZE; i++)
     {
         if (i == selectItem)
         {
-            mh_print(2, FONT_HEIGHT * (i + 2), "*", RED);
+            mh_print(2, FONT_HEIGHT * (i + 2)+2, "*", RED);
             mh_print(10, FONT_HEIGHT * (i + 2), Menu[i], RED);
         }
         else
@@ -143,6 +140,7 @@ void menuPrintList(int selectItem)
         }
     }
     mh_end();
+	video_flip_screen(1);
 }
 
 void menuBsortList(void)
@@ -224,10 +222,11 @@ int menuRomList(unsigned int oldButton)
                 {
                     wsExit();
                 }
-                video_clear_frame(tex_frame);
-                mh_print(50, 50, "Loading...", RGB(255, 255, 255));
-                mh_print(70, 60, FileList[startPos + selectFile].name, RGB(255, 255, 255));
-                video_copy_rect(tex_frame, draw_frame, &full_rect, &full_rect);
+				video_clear_frame(draw_frame);
+                mh_start();
+                mh_print(20, 50, "Loading...", RGB(255, 255, 255));
+                mh_print(40, 70, FileList[startPos + selectFile].name, RGB(255, 255, 255));
+                mh_end();
 				video_flip_screen(1);
                 strcpy(RomPath, CurDir);
                 strcat(RomPath, FileList[startPos + selectFile].name);
@@ -343,10 +342,11 @@ void menuPrintRomList(int startPos, int selectFile)
     int color;
     char str[MAX_PATH];
 
+	video_clear_frame(draw_frame);
 	mh_start();
     mh_print(0, 0, Title, WHITE);
     mh_print(0, FONT_HEIGHT, CurDir, BLUE);
-    mh_print(2, (selectFile + 2) * FONT_HEIGHT, "*", RED);
+    mh_print(2, (selectFile + 2) * FONT_HEIGHT+2, "*", RED);
     for (i = startPos; i < startPos + MAX_LINE; i++)
     {
         if (i >= FileCount)
@@ -384,6 +384,7 @@ void menuPrintRomList(int startPos, int selectFile)
         }
     }
 	mh_end();
+	video_flip_screen(1);
 }
 
 void menuStateList(unsigned int oldButton, int save)
@@ -443,6 +444,7 @@ void menuStateSavePrintList(int index)
     char list[32];
     char date[20];
 
+	video_clear_frame(draw_frame);
 	mh_start();
     mh_print(0, 0, Title,RGB(255, 255, 255));
     mh_print(0, FONT_HEIGHT, "STATE SLOTS", BLUE);
@@ -465,7 +467,7 @@ void menuStateSavePrintList(int index)
         sprintf(list, "SLOT%03d %s", i, date);
         if (i == index)
         {
-            mh_print(2, FONT_HEIGHT * (i + 2), "*", RED);
+            mh_print(2, FONT_HEIGHT * (i + 2)+2, "*", RED);
             mh_print(10, FONT_HEIGHT * (i + 2), list, RED);
         }
         else {
@@ -473,6 +475,7 @@ void menuStateSavePrintList(int index)
         }
     }
 	mh_end();
+	video_flip_screen(1);
 }
 
 void menuConfig(unsigned int oldButton, int mode)
@@ -493,9 +496,9 @@ void menuConfig(unsigned int oldButton, int mode)
         Menu[6] = ClockMenu[Clock];
 		switch (Clock)
 		{
-		case 1: scePowerSetClockFrequency(266, 266, 133); break;
-		case 2: scePowerSetClockFrequency(300, 300, 150); break;
-		case 3: scePowerSetClockFrequency(333, 333, 166); break;
+		case  1: scePowerSetClockFrequency(266, 266, 133); break;
+		case  2: scePowerSetClockFrequency(300, 300, 150); break;
+		case  3: scePowerSetClockFrequency(333, 333, 166); break;
 		default: scePowerSetClockFrequency(222, 222, 111); break;
 		}
         break;

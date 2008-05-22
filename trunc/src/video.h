@@ -15,7 +15,7 @@
 #define SLICE_SIZE			64 // change this to experiment with different page-cache sizes
 #define TEXTURE_FLAGS		(GU_TEXTURE_16BIT | GU_COLOR_5551 | GU_VERTEX_16BIT | GU_TRANSFORM_2D)
 #define GU_FRAME_ADDR(frame)	(unsigned short *)((unsigned long)frame | 0x44000000)
-//#define RGB(r,g,b)			((((b & 0xf8) << 7) | ((g & 0xf8) << 2) | ((r & 0xf8) >> 3))|0x8000)
+#define RGB555(r,g,b)		((((b & 0xf8) << 7) | ((g & 0xf8) << 2) | ((r & 0xf8) >> 3))|0x8000)
 #define RGB(r,g,b)			(((b) << 16) | ((g) << 8) | (r) | 0xFF000000)
 
 typedef struct rect_t
@@ -51,5 +51,6 @@ void video_copy_rect(void *src, void *dst, RECT *src_rect, RECT *dst_rect);
 void mh_start(void);
 void mh_print(int x,int y,const char *str,unsigned int color);
 void mh_end(void);
+void mh_print_num(int x, int y, int num, unsigned short color);
 
 #endif

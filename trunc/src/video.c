@@ -8,6 +8,7 @@
 #include <pspgu.h>
 #include <pspdisplay.h>
 #include "video.h"
+#include "font.h"
 #include "intraFont.h"
 
 unsigned int __attribute__((aligned(16))) gulist[512*512];
@@ -491,19 +492,81 @@ void mh_start(void)
 {
 	sceGuStart(GU_DIRECT, gulist);
 	sceGuDrawBufferList(GU_PSM_5551, draw_frame, BUF_WIDTH);
-	sceGuClearColor(0);
-	sceGuClear(GU_COLOR_BUFFER_BIT);
 }
 
 void mh_print(int x,int y,const char *str,unsigned int color)
 {
     intraFontSetStyle(jpn0, 0.6f, color, 0, 0);
-	intraFontPrint(jpn0, x, y + 25, str);
+	intraFontPrint(jpn0, x, y + 12, str);
 }
 
 void mh_end(void)
 {
 	sceGuFinish();
-	sceGuSync(0,GU_SYNC_FINISH);
-	video_flip_screen(1);
+	sceGuSync(0, GU_SYNC_FINISH);
+}
+
+void mh_print_num(int x, int y, int num, unsigned short color)
+{
+	int i, j, n, val[4];
+	unsigned char ch, *ft;
+	unsigned short* vr;
+	unsigned short *vp;
+
+	if (num < 10) 
+	{
+		n = 2;
+		val[0] = num;
+		val[1] = 0;
+	}
+	else if (num < 100)
+	{
+		n = 2;
+		val[0] = num % 10;
+		val[1] = num / 10;
+	}
+	else if (num < 1000)
+	{
+		n = 3;
+		val[0] = num % 10;
+		num /= 10;
+		val[1] = num % 10;
+		val[2] = num / 10;
+	}
+	else if (num < 10000)
+	{
+		n = 4;
+		val[0] = num % 10;
+		num /= 10;
+		val[1] = num % 10;
+		num /= 10;
+		val[2] = num % 10;
+		val[3] = num / 10;
+	}
+	else return;
+	while (n--)
+	{
+		ft = (unsigned char*)font + ((val[n]+'0') << 3);
+		vr = video_frame_addr(tex_frame, x, y);
+		for (i = 0; i < 8; i++)
+		{
+			vp = vr;
+			ch = 0x80;
+			for (j = 0; j < 8; j++)
+			{
+				if (*ft & ch)
+				{
+					*vp++ = 0xFFFF;
+				}
+				else
+				{
+					*vp++ = 0x8000;
+				}
+				ch >>= 1;
+			}
+			ft++;
+			vr += BUF_WIDTH;
+		}
+		x += 8;
+	}
 }

@@ -854,12 +854,11 @@ int wsExecuteFrame(int render)
 int wsExecute(void)
 {
     int i;
-    char buf[256];
     int render;
 	RECT src_rect = {64,0,64+240,144};
 	RECT dst_rect = {120,64,120+240,64+144};
 	RECT large_rect = {20,0,20+453,SCR_HEIGHT};
-	RECT fps_rect = {0,0,64,64};
+	RECT fps_rect = {0,0,32,32};
 
     for (i = 4; i--;)
     {
@@ -869,12 +868,10 @@ int wsExecute(void)
         WsFrame++;
         if (render)
         {
-            gpuSetSegment();
-            sprintf(buf, "%02d", Fps);
-            mh_print(0, 0, buf,RGB(255, 255, 255));
-            sprintf(buf, "%02d", Fps - Drop);
-            mh_print(0, 10, buf,RGB(255, 255, 255));
+            mh_print_num(0, 0, Fps, RGB555(255,255,255));
+            mh_print_num(0, 10, Fps - Drop, RGB555(255,255,255));
 			video_copy_rect(tex_frame, draw_frame, &fps_rect, &fps_rect);
+            gpuSetSegment();
 			if (ScreenSize)
 			{
 				video_copy_rect(work_frame, draw_frame, &src_rect, &large_rect);
