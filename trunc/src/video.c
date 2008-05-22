@@ -8,8 +8,7 @@
 #include <pspgu.h>
 #include <pspdisplay.h>
 #include "video.h"
-#include "font.h"
-#include "fontNaga10.h"
+#include "intraFont.h"
 
 unsigned int __attribute__((aligned(16))) gulist[512*512];
 unsigned short *show_frame;
@@ -17,6 +16,7 @@ unsigned short *draw_frame;
 unsigned short *work_frame;
 unsigned short *tex_frame;
 RECT full_rect = { 0, 0, SCR_WIDTH, SCR_HEIGHT };
+intraFont* jpn0;
 
 static const ScePspIMatrix4 dither_matrix =
 {
@@ -38,8 +38,12 @@ struct Vertex
 	ビデオ処理初期化
 --------------------------------------------------------*/
 
-void pgGuInit(void)
+void video_init(void)
 {
+    // Init intraFont library
+    intraFontInit();
+    jpn0 = intraFontLoad("flash0:/font/jpn0.pgf",INTRAFONT_STRING_SJIS);
+
 	draw_frame = (void *)(FRAMESIZE * 0);
 	show_frame = (void *)(FRAMESIZE * 1);
 	work_frame = (void *)(FRAMESIZE * 2);
@@ -60,7 +64,7 @@ void pgGuInit(void)
 	sceGuDisable(GU_ALPHA_TEST);
 	sceGuAlphaFunc(GU_LEQUAL, 0, 0x01);
 
-	sceGuDisable(GU_BLEND);
+	sceGuEnable(GU_BLEND);
 	sceGuBlendFunc(GU_ADD, GU_SRC_ALPHA, GU_ONE_MINUS_SRC_ALPHA, 0, 0);
 
 	sceGuDisable(GU_DEPTH_TEST);
@@ -87,6 +91,17 @@ void pgGuInit(void)
 
 	sceDisplayWaitVblankStart();
 	sceGuDisplay(GU_TRUE);
+}
+
+/*--------------------------------------------------------
+	ビデオ処理終了(共通)
+--------------------------------------------------------*/
+
+void video_exit(void)
+{
+    intraFontUnload(jpn0);
+	sceGuDisplay(GU_FALSE);
+	sceGuTerm();
 }
 
 /*--------------------------------------------------------
@@ -221,6 +236,7 @@ void video_copy_rect(void *src, void *dst, RECT *src_rect, RECT *dst_rect)
 
 	sceGuTexMode(GU_PSM_5551, 0, 0, GU_FALSE);
 	sceGuTexImage(0, BUF_WIDTH, BUF_WIDTH, BUF_WIDTH, GU_FRAME_ADDR(src));
+	sceGuTexFunc(GU_TFX_REPLACE, GU_TCC_RGBA);
 	if (sw == dw && sh == dh)
 		sceGuTexFilter(GU_NEAREST, GU_NEAREST);
 	else
@@ -286,6 +302,7 @@ void video_copy_rect_flip(void *src, void *dst, RECT *src_rect, RECT *dst_rect)
 
 	sceGuTexMode(GU_PSM_5551, 0, 0, GU_FALSE);
 	sceGuTexImage(0, BUF_WIDTH, BUF_WIDTH, BUF_WIDTH, GU_FRAME_ADDR(src));
+	sceGuTexFunc(GU_TFX_REPLACE, GU_TCC_RGBA);
 	if (sw == dw && sh == dh)
 		sceGuTexFilter(GU_NEAREST, GU_NEAREST);
 	else
@@ -349,9 +366,12 @@ void video_copy_rect_rotate(void *src, void *dst, RECT *src_rect, RECT *dst_rect
 	sceGuDrawBufferList(GU_PSM_5551, dst, BUF_WIDTH);
 	sceGuScissor(dst_rect->left, dst_rect->top, dst_rect->right, dst_rect->bottom);
 	sceGuDisable(GU_ALPHA_TEST);
+	sceGuDisable(GU_BLEND);
+	sceGuDisable(GU_DEPTH_TEST);
 
 	sceGuTexMode(GU_PSM_5551, 0, 0, GU_FALSE);
 	sceGuTexImage(0, BUF_WIDTH, BUF_WIDTH, BUF_WIDTH, GU_FRAME_ADDR(src));
+	sceGuTexFunc(GU_TFX_REPLACE, GU_TCC_RGBA);
 	if (sw == dh && sh == dw)
 		sceGuTexFilter(GU_NEAREST, GU_NEAREST);
 	else
@@ -419,6 +439,7 @@ void video_draw_texture(unsigned long src_fmt, unsigned long dst_fmt, void *src,
 
 	sceGuTexMode(src_fmt, 0, 0, GU_FALSE);
 	sceGuTexImage(0, BUF_WIDTH, BUF_WIDTH, BUF_WIDTH, GU_FRAME_ADDR(src));
+	sceGuTexFunc(GU_TFX_REPLACE, GU_TCC_RGBA);
 	if (sw == dw && sh == dh)
 		sceGuTexFilter(GU_NEAREST, GU_NEAREST);
 	else
@@ -463,147 +484,26 @@ void video_draw_texture(unsigned long src_fmt, unsigned long dst_fmt, void *src,
 }
 
 /*--------------------------------------------------------
-	半角文字表示
---------------------------------------------------------*/
-// by kwn
-void Draw_Char_Hankaku(int x,int y,const unsigned char c,int col) {
-    unsigned short *vr;
-    unsigned char  *fnt;
-    unsigned char  pt;
-    unsigned char ch;
-    int x1,y1;
-
-    ch = c;
-
-    // mapping
-    if (ch < 0x20)
-        ch = 0;
-    else if (ch < 0x80)
-        ch -= 0x20;
-    else if (ch < 0xa0)
-        ch = 0;
-    else
-        ch -= 0x40;
-
-    fnt = (unsigned char *)&hankaku_font10[ch*10];
-
-    // draw
-    vr = video_frame_addr(tex_frame, x, y);
-    for(y1 = 0; y1 < 10; y1++) {
-        pt = *fnt++;
-        for(x1 = 0; x1 < 5; x1++) {
-            if (pt & 1)
-                *vr = col;
-            else
-                *vr = 0x8000;
-            vr++;
-            pt = pt >> 1;
-        }
-        vr += LINESIZE - 5;
-    }
-}
-
-/*--------------------------------------------------------
-	全角文字表示
---------------------------------------------------------*/
-// by kwn
-void Draw_Char_Zenkaku(int x,int y,const unsigned char u,unsigned char d,int col) {
-    // ELISA100.FNTに存在しない文字
-    const unsigned short font404[] = {
-        0xA2AF, 11,
-        0xA2C2, 8,
-        0xA2D1, 11,
-        0xA2EB, 7,
-        0xA2FA, 4,
-        0xA3A1, 15,
-        0xA3BA, 7,
-        0xA3DB, 6,
-        0xA3FB, 4,
-        0xA4F4, 11,
-        0xA5F7, 8,
-        0xA6B9, 8,
-        0xA6D9, 38,
-        0xA7C2, 15,
-        0xA7F2, 13,
-        0xA8C1, 720,
-        0xCFD4, 43,
-        0xF4A5, 1030,
-        0,0
-    };
-    unsigned short *vr;
-    unsigned short *fnt;
-    unsigned short pt;
-    int x1,y1;
-
-    unsigned long n;
-    unsigned short code;
-    int j;
-
-    // SJISコードの生成
-    code = u;
-    code = (code<<8) + d;
-
-    // SJISからEUCに変換
-    if(code >= 0xE000) code -= 0x4000;
-    code = ((((code >> 8) & 0xFF) - 0x81) << 9) + (code&0x00FF);
-    if((code & 0x00FF) >= 0x80) code--;
-    if((code & 0x00FF) >= 0x9E) code+=0x62;
-    else code -= 0x40;
-    code += 0x2121 + 0x8080;
-
-    // EUCから恵梨沙フォントの番号を生成
-    n = (((code >> 8) & 0xFF) - 0xA1) * (0xFF - 0xA1)
-        + (code & 0xFF) - 0xA1;
-    j=0;
-    while(font404[j]) {
-        if(code >= font404[j]) {
-            if(code <= font404[j] + font404[j + 1] - 1) {
-                n = -1;
-                break;
-            } else {
-                n -= font404[j + 1];
-            }
-        }
-        j += 2;
-    }
-    fnt = (unsigned short *)&zenkaku_font10[n * 10];
-
-    // draw
-    vr = video_frame_addr(tex_frame, x, y);
-    for(y1 = 0; y1 < 10; y1++) {
-        pt = *fnt++;
-        for(x1 = 0; x1 < 10; x1++) {
-            if (pt & 1)
-                *vr = col;
-            else
-                *vr = 0x8000;
-            vr++;
-            pt = pt >> 1;
-        }
-        vr += LINESIZE - 10;
-    }
-}
-
-/*--------------------------------------------------------
 	文字列表示
 --------------------------------------------------------*/
-// by kwn
-void mh_print(int x,int y,const char *str,int color) {
-    unsigned char ch = 0,bef = 0;
 
-    while(*str != 0) {
-        ch = (unsigned char)*str++;
-        if (bef != 0) {
-            Draw_Char_Zenkaku(x, y, bef, ch, color);
-            x += 10;
-            bef = 0;
-        } else {
-            if (((ch >= 0x80) && (ch < 0xa0)) || (ch >= 0xe0)) {
-                bef = ch;
-            } else {
-                Draw_Char_Hankaku(x, y, ch, color);
-                x += 5;
-            }
-        }
-    }
+void mh_start(void)
+{
+	sceGuStart(GU_DIRECT, gulist);
+	sceGuDrawBufferList(GU_PSM_5551, draw_frame, BUF_WIDTH);
+	sceGuClearColor(0);
+	sceGuClear(GU_COLOR_BUFFER_BIT);
+}
+
+void mh_print(int x,int y,const char *str,unsigned int color)
+{
+    intraFontSetStyle(jpn0, 0.6f, color, 0, 0);
+	intraFontPrint(jpn0, x, y + 25, str);
+}
+
+void mh_end(void)
+{
+	sceGuFinish();
+	sceGuSync(0,GU_SYNC_FINISH);
+	video_flip_screen(1);
 }

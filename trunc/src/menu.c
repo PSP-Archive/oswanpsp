@@ -121,8 +121,6 @@ int menuList(void)
             return 3;
         }
         oldButton = newButton;
-        video_copy_rect(tex_frame, draw_frame, &full_rect, &full_rect);
-		video_flip_screen(1);
     }
     return 0;
 }
@@ -130,20 +128,21 @@ int menuList(void)
 void menuPrintList(int selectItem)
 {
     int i;
-    video_clear_frame(tex_frame);
-    mh_print(0, 0, Title,RGB(255, 255, 255));
+	mh_start();
+    mh_print(0, 0, Title, WHITE);
     for (i = 0; i < MENU_SIZE; i++)
     {
         if (i == selectItem)
         {
-            mh_print(2, FONT_HEIGHT * (i + 2), "*",RGB(255, 0, 0));
-            mh_print(10, FONT_HEIGHT * (i + 2), Menu[i],RGB(255, 0, 0));
+            mh_print(2, FONT_HEIGHT * (i + 2), "*", RED);
+            mh_print(10, FONT_HEIGHT * (i + 2), Menu[i], RED);
         }
         else
         {
-            mh_print(10, FONT_HEIGHT * (i + 2), Menu[i],RGB(255, 255, 255));
+            mh_print(10, FONT_HEIGHT * (i + 2), Menu[i], WHITE);
         }
     }
+    mh_end();
 }
 
 void menuBsortList(void)
@@ -292,8 +291,6 @@ int menuRomList(unsigned int oldButton)
                 }
             }
         }
-        video_copy_rect(tex_frame, draw_frame, &full_rect, &full_rect);
-		video_flip_screen(1);
     }
     return 0;
 }
@@ -346,10 +343,10 @@ void menuPrintRomList(int startPos, int selectFile)
     int color;
     char str[MAX_PATH];
 
-    video_clear_frame(tex_frame);
-    mh_print(0, 0, Title,RGB(255, 255, 255));
-    mh_print(0, FONT_HEIGHT, CurDir,RGB(0, 0, 255));
-    mh_print(2, (selectFile + 2) * FONT_HEIGHT, "*",RGB(255, 0, 0));
+	mh_start();
+    mh_print(0, 0, Title, WHITE);
+    mh_print(0, FONT_HEIGHT, CurDir, BLUE);
+    mh_print(2, (selectFile + 2) * FONT_HEIGHT, "*", RED);
     for (i = startPos; i < startPos + MAX_LINE; i++)
     {
         if (i >= FileCount)
@@ -360,11 +357,11 @@ void menuPrintRomList(int startPos, int selectFile)
         {
             if ((i - startPos) == selectFile)
             {
-                color = RGB(255, 0, 0);
+                color = RED;
             }
             else
             {
-                color = RGB(0, 255, 0);
+                color = GREEN;
             }
             sprintf(str, "<%s>", FileList[i].name);
             mh_print(10, (i - startPos + 2) * FONT_HEIGHT, str, color);
@@ -373,11 +370,11 @@ void menuPrintRomList(int startPos, int selectFile)
         {
             if ((i - startPos) == selectFile)
             {
-                color = RGB(255, 0, 0);
+                color = RED;
             }
             else
             {
-                color = RGB(255, 255, 255);
+                color = WHITE;
             }
             mh_print(10, (i - startPos + 2) * FONT_HEIGHT, FileList[i].name, color);
         }
@@ -386,6 +383,7 @@ void menuPrintRomList(int startPos, int selectFile)
             mh_print(10, (i - startPos + 2) * FONT_HEIGHT, FileList[i].name,RGB(100, 100, 100));
         }
     }
+	mh_end();
 }
 
 void menuStateList(unsigned int oldButton, int save)
@@ -432,8 +430,6 @@ void menuStateList(unsigned int oldButton, int save)
             menuStateSavePrintList(selectItem);
         }
         oldButton = newButton;
-        video_copy_rect(tex_frame, draw_frame, &full_rect, &full_rect);
-		video_flip_screen(1);
     }
     return;
 }
@@ -447,9 +443,9 @@ void menuStateSavePrintList(int index)
     char list[32];
     char date[20];
 
-    video_clear_frame(tex_frame);
+	mh_start();
     mh_print(0, 0, Title,RGB(255, 255, 255));
-    mh_print(0, FONT_HEIGHT, "STATE SLOTS", RGB(0, 0, 255));
+    mh_print(0, FONT_HEIGHT, "STATE SLOTS", BLUE);
     for (i = 0; i < 10; i++)
     {
         fileioGetStatePath(file, MAX_PATH, i);
@@ -459,23 +455,24 @@ void menuStateSavePrintList(int index)
         {
             sprintf(date, "%04d/%02d/%02d %02d:%02d:%02d",
             st.st_mtime.year, st.st_mtime.month, st.st_mtime.day, st.st_mtime.hour, st.st_mtime.minute, st.st_mtime.second);
-            color = RGB(255, 255, 255);
+            color = WHITE;
         }
         else
         {
             date[0] = '\0';
-            color = RGB(128, 128, 128);
+            color = GRAY;
         }
         sprintf(list, "SLOT%03d %s", i, date);
         if (i == index)
         {
-            mh_print(2, FONT_HEIGHT * (i + 2), "*",RGB(255, 0, 0));
-            mh_print(10, FONT_HEIGHT * (i + 2), list, RGB(255, 0, 0));
+            mh_print(2, FONT_HEIGHT * (i + 2), "*", RED);
+            mh_print(10, FONT_HEIGHT * (i + 2), list, RED);
         }
         else {
             mh_print(10, FONT_HEIGHT * (i + 2), list, color);
         }
     }
+	mh_end();
 }
 
 void menuConfig(unsigned int oldButton, int mode)

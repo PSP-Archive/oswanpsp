@@ -71,12 +71,13 @@ int main(int argc, char *argv[])
     SetupCallbacks();
     sceKernelRegisterSubIntrHandler(PSP_VBLANK_INT, 1, VblankInt, NULL);
     sceKernelEnableSubIntr(PSP_VBLANK_INT, 1);
-    pgGuInit();
     sceCtrlSetSamplingCycle(0);
     sceCtrlSetSamplingMode(PSP_CTRL_MODE_ANALOG);
+    video_init();
     apuInit();
     while (Run)
     {
+		video_clear_screen();
         ret = menuList();
 		video_clear_screen();
         switch (ret)
@@ -144,6 +145,7 @@ int main(int argc, char *argv[])
         wsExit();
     }
     apuEnd();
+	video_exit();
     sceKernelDisableSubIntr(PSP_VBLANK_INT, 1);
     sceKernelReleaseSubIntrHandler(PSP_VBLANK_INT, 1);
     sceKernelExitGame();
