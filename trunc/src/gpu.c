@@ -773,22 +773,22 @@ void gpuSetSegment(void)
         }
         else
         {
-            *vptr++ = 0;
-            *vptr++ = 0;
-            *vptr++ = 0;
-            *vptr++ = 0;
-            *vptr++ = 0;
-            *vptr++ = 0;
-            *vptr++ = 0;
-            *vptr++ = 0;
-            *vptr++ = 0;
-            *vptr++ = 0;
-            *vptr++ = 0;
-            *vptr++ = 0;
-            *vptr++ = 0;
-            *vptr++ = 0;
-            *vptr++ = 0;
-            *vptr++ = 0;
+            *vptr++ = 0x8000;
+            *vptr++ = 0x8000;
+            *vptr++ = 0x8000;
+            *vptr++ = 0x8000;
+            *vptr++ = 0x8000;
+            *vptr++ = 0x8000;
+            *vptr++ = 0x8000;
+            *vptr++ = 0x8000;
+            *vptr++ = 0x8000;
+            *vptr++ = 0x8000;
+            *vptr++ = 0x8000;
+            *vptr++ = 0x8000;
+            *vptr++ = 0x8000;
+            *vptr++ = 0x8000;
+            *vptr++ = 0x8000;
+            *vptr++ = 0x8000;
             vptr += (512-16);
             y++;
         }
