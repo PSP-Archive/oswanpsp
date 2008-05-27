@@ -30,18 +30,18 @@ const char *Menu[MENU_SIZE] = {
     "終了"
 };
 const char *Screen[2] = {
-    "画像サイズ 小",
-    "画像サイズ 大",
+    "画像サイズ      [小]",
+    "画像サイズ      [大]",
 };
 const char *VsyncMenu[2] = {
-    "Vsync OFF",
-    "Vsync ON",
+    "Vsync           [OFF]",
+    "Vsync           [ON]",
 };
 const char *ClockMenu[4] = {
-    "クロック 222MHz",
-    "クロック 266MHz",
-    "クロック 300MHz",
-    "クロック 333MHz",
+    "CPUクロック  [222MHz]",
+    "CPUクロック  [266MHz]",
+    "CPUクロック  [300MHz]",
+    "CPUクロック  [333MHz]",
 };
 static int Clock = 0;
 
