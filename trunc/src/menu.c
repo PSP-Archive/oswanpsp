@@ -47,6 +47,9 @@ static int Clock = 0;
 
 extern unsigned short *draw_frame;
 
+/*-------------------------
+  メニュー選択画面表示
+-------------------------*/
 int menuList(void)
 {
     int selectItem = 0;
@@ -121,6 +124,10 @@ int menuList(void)
     return 0;
 }
 
+/*-------------------------
+  メニュー項目表示
+  選択項目は*追加　色を赤に
+-------------------------*/
 void menuPrintList(int selectItem)
 {
     int i;
@@ -143,6 +150,9 @@ void menuPrintList(int selectItem)
 	video_flip_screen(1);
 }
 
+/*-------------------------
+  ファイルのリストをソート
+-------------------------*/
 void menuBsortList(void)
 {
     int i, j;
@@ -172,6 +182,9 @@ void menuBsortList(void)
     }
 }
 
+/*-------------------------
+  ROM選択画面表示
+-------------------------*/
 int menuRomList(unsigned int oldButton)
 {
     int isSelected = 0;
@@ -294,6 +307,9 @@ int menuRomList(unsigned int oldButton)
     return 0;
 }
 
+/*-------------------------
+  ディレクトリ内のファイルを取得してリストへ
+-------------------------*/
 int menuGetFileList(void)
 {
     int dfd;
@@ -306,6 +322,7 @@ int menuGetFileList(void)
     {
         while (sceIoDread(dfd, &dir) > 0)
         {
+			// 以下のファイルは除外
             if (stricmp(dir.d_name, "EBOOT.PBP") == 0 ||
                 stricmp(dir.d_name, "eeprom.dat") == 0 ||
                 stricmp(dir.d_name, "SAVE") == 0 ||
@@ -336,6 +353,9 @@ int menuGetFileList(void)
     return -1;
 }
 
+/*-------------------------
+  ファイル名表示
+-------------------------*/
 void menuPrintRomList(int startPos, int selectFile)
 {
     int i;
@@ -387,6 +407,9 @@ void menuPrintRomList(int startPos, int selectFile)
 	video_flip_screen(1);
 }
 
+/*-------------------------
+  ステートセーブ・ロード選択画面表示
+-------------------------*/
 void menuStateList(unsigned int oldButton, int save)
 {
     int selectItem = 0;
@@ -435,6 +458,9 @@ void menuStateList(unsigned int oldButton, int save)
     return;
 }
 
+/*-------------------------
+  ステート項目表示
+-------------------------*/
 void menuStateSavePrintList(int index)
 {
     int i, ret;
@@ -478,6 +504,10 @@ void menuStateSavePrintList(int index)
 	video_flip_screen(1);
 }
 
+/*-------------------------
+  切り替え項目処理
+  画面サイズ、垂直同期、CPUクロック
+-------------------------*/
 void menuConfig(unsigned int oldButton, int mode)
 {
     switch (mode)

@@ -71,11 +71,19 @@ int ScreenSize;
 int Vsync;
 unsigned char SRAM[0x10000]; // ダミーのSRAM(WonderWitchで使用)
 
+RECT src_rect = {64,0,64+240,144};
+RECT dst_rect = {120,64,120+240,64+144};
+RECT large_rect = {20,0,20+453,SCR_HEIGHT};
+RECT fps_rect = {0,0,32,32};
+
 extern unsigned short *draw_frame;
 extern unsigned short *work_frame;
 extern unsigned short *tex_frame;
 extern RECT full_rect;
 
+/*-------------------------
+  初期化
+-------------------------*/
 void wsInit(void)
 {
     int ret;
@@ -110,6 +118,9 @@ void wsInit(void)
     wsReset();
 }
 
+/*-------------------------
+  パーソナルデータのプログラムをセット
+-------------------------*/
 void wsPdata(void)
 {
     int i;
@@ -143,6 +154,9 @@ void wsPdata(void)
     wsReset();
 }
 
+/*-------------------------
+  終了
+-------------------------*/
 void wsExit(void)
 {
     fileioSaveData();
@@ -154,6 +168,9 @@ void wsExit(void)
     CProm.data = NULL;
 }
 
+/*-------------------------
+  リセット
+-------------------------*/
 void wsReset(void)
 {
     int i;
@@ -168,6 +185,12 @@ void wsReset(void)
     nec_set_reg(NEC_SP, 0x2000);
 }
 
+/*-------------------------
+  メモリ書き込み
+  0x00000 : 内蔵RAM
+  0x10000 : Flash RAM
+  0x20000 : ROM
+-------------------------*/
 #define	FLASH_CMD_ADDR1			0x10AAA
 #define	FLASH_CMD_ADDR2			0x10555
 #define	FLASH_CMD_DATA1			0xAA
@@ -297,6 +320,9 @@ void wsWriteMem(int addr, unsigned char val)
     }
 }
 
+/*-------------------------
+  IOポート書き込み
+-------------------------*/
 void wsWritePort(unsigned char port,unsigned char val)
 {
     int i, j, k, n;
@@ -591,6 +617,9 @@ void wsWritePort(unsigned char port,unsigned char val)
 //    DEBUGVALUE2("ioWrite", port, val);
 }
 
+/*-------------------------
+  IOポート読み込み
+-------------------------*/
 unsigned char wsReadPort(unsigned char port)
 {
     if (port == 0xCA)
@@ -656,6 +685,9 @@ unsigned char wsReadPort(unsigned char port)
     return IO[port];
 }
 
+/*-------------------------
+  EEPROM通信処理
+-------------------------*/
 void wsComEep(EEPROM* eeprom, unsigned short* cmd, unsigned short* data)
 {
     int i, j, op, addr;
@@ -741,6 +773,12 @@ void wsComEep(EEPROM* eeprom, unsigned short* cmd, unsigned short* data)
     }
 }
 
+/*-------------------------
+  サウンドに同期
+  実機では12KHzで75.5fps
+  PSPでは44.1KHzなので4分して11.025KHzで再生
+  フレームレートも 75.5 * 11.025 / 12= 69.4が標準速度
+-------------------------*/
 int wsFrameSkipSound(void)
 {
     static int lastSkip = 0;
@@ -760,6 +798,9 @@ int wsFrameSkipSound(void)
     return 1;
 }
 
+/*-------------------------
+  1フレーム(159 scanlines)実行
+-------------------------*/
 int wsExecuteFrame(int render)
 {
     int i;
@@ -851,14 +892,13 @@ int wsExecuteFrame(int render)
     return frameFin;
 }
 
+/*-------------------------
+  エミュ実行ループ
+-------------------------*/
 int wsExecute(void)
 {
     int i;
     int render;
-	RECT src_rect = {64,0,64+240,144};
-	RECT dst_rect = {120,64,120+240,64+144};
-	RECT large_rect = {20,0,20+453,SCR_HEIGHT};
-	RECT fps_rect = {0,0,32,32};
 
     for (i = 4; i--;)
     {
