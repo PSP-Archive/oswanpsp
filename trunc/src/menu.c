@@ -7,16 +7,17 @@
 #include <psppower.h>
 #include <stdio.h>
 #include <string.h>
+#include <time.h>
 #include "fileio.h"
 #include "video.h"
 #include "ws.h"
 #include "menu.h"
 #include "debug/debug.h"
 
-#define MAX_LINE 28
-#define MENU_SIZE 8
+#define MAX_LINE 20 // 1画面に表示するファイル数
+#define MENU_SIZE 8 // メニュー画面の項目数
 
-FILELIST FileList[256];
+FILELIST FileList[256]; // 市販ソフト全部入れても足りるはず
 int FileCount;
 const char *Title = "Oswan for PSP";
 const char *Menu[MENU_SIZE] = {
@@ -187,9 +188,13 @@ void menuBsortList(void)
 -------------------------*/
 int menuRomList(unsigned int oldButton)
 {
+    int keyStart = 0, keyRepeat = 0;
+    clock_t keyTime = 0;
     int isSelected = 0;
     int startPos = 0;
     int selectFile = 0;
+	int start = -1;
+	int select = -1;
     SceCtrlData pad;
     unsigned int newButton;
     char* index;
@@ -201,108 +206,143 @@ int menuRomList(unsigned int oldButton)
     }
     while(Run && !isSelected)
     {
-        menuPrintRomList(startPos, selectFile);
         sceCtrlReadBufferPositive(&pad, 1);
         newButton = pad.Buttons;
-        if ((newButton & PSP_CTRL_CROSS) && !(oldButton & PSP_CTRL_CROSS))
-        {
-            return 0;
-        }
-        if ((newButton & PSP_CTRL_CIRCLE) && !(oldButton & PSP_CTRL_CIRCLE))
-        {
-            if(FileList[startPos + selectFile].type == 0) {
-                if(strcmp("..", FileList[startPos + selectFile].name) == 0) {
-                    index = strrchr(CurDir, '/');
-                    if (index != NULL) *index = '\0';
-                    index = strrchr(CurDir, '/');
-                    if (index != NULL) *(index+1) = '\0';
-                }
-                else
-                {
-                    strcat(CurDir, FileList[startPos + selectFile].name);
-                    strcat(CurDir, "/");
-                }
-                startPos = selectFile = 0;
-                FileCount = menuGetFileList();
-                if (FileCount < 0)
-                {
-                    return 0;
-                }
-            }
-            else if(FileList[startPos + selectFile].type == 1)
-            {
-                if (Cart)
-                {
-                    wsExit();
-                }
-				video_clear_frame(draw_frame);
-                mh_start();
-                mh_print(20, 50, "Loading...", RGB(255, 255, 255));
-                mh_print(40, 70, FileList[startPos + selectFile].name, RGB(255, 255, 255));
-                mh_end();
-				video_flip_screen(1);
-                strcpy(RomPath, CurDir);
-                strcat(RomPath, FileList[startPos + selectFile].name);
-                return 1;
-            }
-        }
-        if ((newButton & PSP_CTRL_DOWN) && !(oldButton & PSP_CTRL_DOWN))
-        {
-            selectFile++;
-        }
-        if ((newButton & PSP_CTRL_UP) && !(oldButton & PSP_CTRL_UP))
-        {
-            selectFile--;
-        }
-        if ((newButton & PSP_CTRL_RIGHT) && !(oldButton & PSP_CTRL_RIGHT))
-        {
-            selectFile += 5;
-            if (startPos + selectFile >= FileCount)
-            {
-                selectFile = FileCount - startPos;
-            }
-            if (selectFile > MAX_LINE - 1)
-            {
-                startPos += selectFile - MAX_LINE;
-            }
-        }
-        if ((newButton & PSP_CTRL_LEFT) && !(oldButton & PSP_CTRL_LEFT))
-        {
-            selectFile -= 5;
-            if (selectFile < 0)
-            {
-                startPos += selectFile + 1;
-            }
-        }
-        oldButton = newButton;
-        if (selectFile < 0)
-        {
-            selectFile = 0;
-            startPos--;
-            if (startPos < 0)
-            {
-                startPos = 0;
-            }
-        }
-        if (FileCount <= MAX_LINE)
-        {
-            if (selectFile >= FileCount)
-            {
-                selectFile = FileCount - 1;
-            }
-        }
-        else
-        {
-            if (selectFile > MAX_LINE - 1)
-            {
-                selectFile = MAX_LINE - 1;
-                startPos++;
-                if ((startPos + MAX_LINE) > FileCount)
-                {
-                    startPos = FileCount - MAX_LINE;
-                }
-            }
-        }
+		if (newButton != oldButton || keyRepeat)
+		{
+			if (newButton != oldButton)
+			{
+				keyStart = 1;
+				if ((newButton & PSP_CTRL_CIRCLE))
+				{
+					if(FileList[startPos + selectFile].type == 0) {
+						if(strcmp("..", FileList[startPos + selectFile].name) == 0) {
+							index = strrchr(CurDir, '/');
+							if (index != NULL) *index = '\0';
+							index = strrchr(CurDir, '/');
+							if (index != NULL) *(index+1) = '\0';
+						}
+						else
+						{
+							strcat(CurDir, FileList[startPos + selectFile].name);
+							strcat(CurDir, "/");
+						}
+						startPos = selectFile = 0;
+						FileCount = menuGetFileList();
+						if (FileCount < 0)
+						{
+							return 0;
+						}
+					}
+					else if(FileList[startPos + selectFile].type == 1)
+					{
+						if (Cart)
+						{
+							wsExit();
+						}
+						video_clear_frame(draw_frame);
+						mh_start();
+						mh_print(20, 50, "Loading...", RGB(255, 255, 255));
+						mh_print(40, 70, FileList[startPos + selectFile].name, RGB(255, 255, 255));
+						mh_end();
+						video_flip_screen(1);
+						strcpy(RomPath, CurDir);
+						strcat(RomPath, FileList[startPos + selectFile].name);
+						return 1;
+					}
+				}
+			}
+			else
+			{
+				keyStart = 0;
+			}
+			keyTime = clock();
+			keyRepeat = 0;
+			oldButton = newButton;
+			if ((newButton & PSP_CTRL_CROSS))
+			{
+				return 0;
+			}
+			if ((newButton & PSP_CTRL_DOWN))
+			{
+				selectFile++;
+			}
+			if ((newButton & PSP_CTRL_UP))
+			{
+				selectFile--;
+			}
+			if ((newButton & PSP_CTRL_RIGHT))
+			{
+				selectFile += 5;
+				if (startPos + selectFile >= FileCount)
+				{
+					selectFile = FileCount - startPos;
+				}
+				if (selectFile > MAX_LINE - 1)
+				{
+					startPos += selectFile - MAX_LINE;
+				}
+			}
+			if ((newButton & PSP_CTRL_LEFT))
+			{
+				selectFile -= 5;
+				if (selectFile < 0)
+				{
+					startPos += selectFile + 1;
+				}
+			}
+			if (selectFile < 0)
+			{
+				selectFile = 0;
+				startPos--;
+				if (startPos < 0)
+				{
+					startPos = 0;
+				}
+			}
+			if (FileCount <= MAX_LINE)
+			{
+				if (selectFile >= FileCount)
+				{
+					selectFile = FileCount - 1;
+				}
+			}
+			else
+			{
+				if (selectFile > MAX_LINE - 1)
+				{
+					selectFile = MAX_LINE - 1;
+					startPos++;
+					if ((startPos + MAX_LINE) > FileCount)
+					{
+						startPos = FileCount - MAX_LINE;
+					}
+				}
+			}
+			if (start != startPos || select != selectFile)
+			{
+				start = startPos;
+				select = selectFile;
+				menuPrintRomList(startPos, selectFile);
+			}
+		}
+		else
+		{
+			if (keyStart)
+			{
+				if (clock() - keyTime > 400000)
+				{
+					keyRepeat = 1;
+				}
+			}
+			else
+			{
+				if (clock() - keyTime > 1000)
+				{
+					keyRepeat = 1;
+				}
+			}
+		}
     }
     return 0;
 }

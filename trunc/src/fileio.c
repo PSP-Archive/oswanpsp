@@ -25,12 +25,31 @@ void fileioSetModulePath(int args, char *argv[])
 {
     int n;
     char pg_mypath[MAX_PATH];
+	SceUID fd;
 
     strncpy(pg_mypath,argv[0], sizeof(pg_mypath));
     pg_mypath[sizeof(pg_mypath)-1]=0;
     strcpy(pg_workdir,pg_mypath);
     for (n=strlen(pg_workdir); n>0 && pg_workdir[n-1]!='/'; --n) pg_workdir[n-1]=0;
     strcpy(CurDir, pg_workdir);
+	sprintf(pg_mypath, "%sSAVE", CurDir);
+	if ((fd = sceIoDopen(pg_mypath)) < 0)
+	{
+		sceIoMkdir(pg_mypath, 0777);
+	}
+	else
+	{
+		sceIoDclose(fd);
+	}
+	sprintf(pg_mypath, "%sSTATE", CurDir);
+	if ((fd = sceIoDopen(pg_mypath)) < 0)
+	{
+		sceIoMkdir(pg_mypath, 0777);
+	}
+	else
+	{
+		sceIoDclose(fd);
+	}
 }
 
 void fileioGetModulePath(char *fn, int nSize)
