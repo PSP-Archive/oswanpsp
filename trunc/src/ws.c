@@ -576,17 +576,13 @@ void wsWritePort(unsigned char port,unsigned char val)
                     }
                     else
                     {
-                        ROM[0x01] = SRAM;
+                        ROM[0x01] = SRAM; // ダミーのSRAM(WonderWitchで使用)
                     }
                     break;
         case 0xC2:
                     ROM[0x02] = ROMMap[val];
                     break;
-        case 0xC3: // GUNPEYは0を書き込むときがある
-                    if (val == 0)
-                    {
-                        break;
-                    }
+        case 0xC3:
                     ROM[0x03] = ROMMap[val];
                     break;
         case 0xC8:

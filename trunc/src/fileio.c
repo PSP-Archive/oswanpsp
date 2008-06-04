@@ -17,7 +17,7 @@
 char pg_workdir[MAX_PATH];
 char CurDir[MAX_PATH]; // menu.c
 char RomPath[MAX_PATH]; // menu.c
-unsigned long CartSize;
+int CartSize;
 unsigned char *ROMMap[0x100];
 WSROMHEADER WsRomHeader;
 
@@ -154,8 +154,8 @@ int fileioOpenRom(void)
     {
         case 1: SramSize = 0x02000; break;
         case 2: SramSize = 0x08000; break;
-        case 3: SramSize = 0x20000; break;
-        case 4: SramSize = 0x40000; break;
+        case 3: SramSize = 0x20000; break; // ëŒã…àÕåÈÅ@ïΩê¨ä˚â@
+        case 4: SramSize = 0x40000; break; // Wonder Witch
         case 5: SramSize = 0x80000; break;
         case 0x10: PromSize = 0x0080; break;
         case 0x20: PromSize = 0x0800; break;

@@ -28,7 +28,7 @@ typedef struct wsRomHeaderStruct
 extern char CurDir[MAX_PATH];
 extern char RomPath[MAX_PATH];
 extern unsigned char *ROMMap[0x100];
-extern unsigned long CartSize;
+extern int CartSize;
 
 void fileioSetModulePath(int argc, char *argv[]);
 void fileioGetModulePath(char *fn, int nSize);
