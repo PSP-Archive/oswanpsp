@@ -54,8 +54,8 @@ unsigned char *ROM[16]; // WS memory
 unsigned char IO[0x100]; // IO port
 unsigned short InternalEeprom[64]; // internal eeprom
 EEPROM IProm, CProm;
-unsigned long SramSize;
-unsigned short PromSize;
+int SramSize;
+int PromSize;
 unsigned short MonoColor[8];
 unsigned short ColorPalette[16][16];
 int hblankTimer, hblankTimerPreset;
