@@ -235,12 +235,12 @@ void wsWriteMem(int addr, unsigned char val)
         // palette ram
         if (addr >= 0xFE00)
         {
-            // RGB444 format
+            // RGB444 format -> ABGR4444
             color = *(unsigned short*)(RAM + (addr & 0xFFFE));
             r   = (color >> 8) & 0x0F;
             g   = (color >> 4) & 0x0F;
             b   =  color       & 0x0F;
-            pal = (b << 11) | (g << 6) | (r << 1) | 0x8000;
+            pal = (b << 8) | (g << 4) | (r) | 0xf000;
             ColorPalette[(addr & 0x1E0) >> 5][(addr & 0x1E) >> 1] = pal;
         }
         if (!((addr - WaveMap) & 0xFFC0))

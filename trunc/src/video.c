@@ -54,7 +54,7 @@ void video_init(void)
 	sceGuInit();
 
 	sceGuStart(GU_DIRECT, gulist);
-	sceGuDrawBuffer(GU_PSM_5551, draw_frame, BUF_WIDTH);
+	sceGuDrawBuffer(GU_PSM_4444, draw_frame, BUF_WIDTH);
 	sceGuDispBuffer(SCR_WIDTH, SCR_HEIGHT, show_frame, BUF_WIDTH);
 	sceGuOffset(2048 - (SCR_WIDTH / 2), 2048 - (SCR_HEIGHT / 2));
 	sceGuViewport(2048, 2048, SCR_WIDTH, SCR_HEIGHT);
@@ -74,12 +74,12 @@ void video_init(void)
 	sceGuDepthMask(GU_TRUE);
 
 	sceGuEnable(GU_TEXTURE_2D);
-	sceGuTexMode(GU_PSM_5551, 0, 0, GU_FALSE);
+	sceGuTexMode(GU_PSM_4444, 0, 0, GU_FALSE);
 	sceGuTexScale(1.0f / BUF_WIDTH, 1.0f / BUF_WIDTH);
 	sceGuTexOffset(0, 0);
 	sceGuTexFunc(GU_TFX_REPLACE, GU_TCC_RGBA);
 
-	sceGuClutMode(GU_PSM_5551, 0, 0xff, 0);
+	sceGuClutMode(GU_PSM_4444, 0, 0xff, 0);
 
 	sceGuSetDither(&dither_matrix);
 	sceGuDisable(GU_DITHER);
@@ -148,7 +148,7 @@ unsigned short* video_frame_addr(void *frame, int x, int y)
 void video_clear_frame(void *frame)
 {
 	sceGuStart(GU_DIRECT, gulist);
-	sceGuDrawBufferList(GU_PSM_5551, frame, BUF_WIDTH);
+	sceGuDrawBufferList(GU_PSM_4444, frame, BUF_WIDTH);
 	sceGuScissor(0, 0, BUF_WIDTH, SCR_HEIGHT);
 	sceGuClearColor(0);
 	sceGuClear(GU_COLOR_BUFFER_BIT);
@@ -175,7 +175,7 @@ void video_clear_screen(void)
 void video_clear_rect(void *frame, RECT *rect)
 {
 	sceGuStart(GU_DIRECT, gulist);
-	sceGuDrawBufferList(GU_PSM_5551, frame, BUF_WIDTH);
+	sceGuDrawBufferList(GU_PSM_4444, frame, BUF_WIDTH);
 	sceGuScissor(rect->left, rect->top, rect->right, rect->bottom);
 	sceGuClearColor(0);
 	sceGuClear(GU_COLOR_BUFFER_BIT);
@@ -191,7 +191,7 @@ void video_clear_rect(void *frame, RECT *rect)
 void video_fill_frame(void *frame, unsigned long color)
 {
 	sceGuStart(GU_DIRECT, gulist);
-	sceGuDrawBufferList(GU_PSM_5551, frame, BUF_WIDTH);
+	sceGuDrawBufferList(GU_PSM_4444, frame, BUF_WIDTH);
 	sceGuScissor(0, 0, SCR_WIDTH, SCR_HEIGHT);
 	sceGuClearColor(color);
 	sceGuClear(GU_COLOR_BUFFER_BIT);
@@ -207,7 +207,7 @@ void video_fill_frame(void *frame, unsigned long color)
 void video_fill_rect(void *frame, unsigned long color, RECT *rect)
 {
 	sceGuStart(GU_DIRECT, gulist);
-	sceGuDrawBufferList(GU_PSM_5551, frame, BUF_WIDTH);
+	sceGuDrawBufferList(GU_PSM_4444, frame, BUF_WIDTH);
 	sceGuScissor(rect->left, rect->top, rect->right, rect->bottom);
 	sceGuClearColor(color);
 	sceGuClear(GU_COLOR_BUFFER_BIT);
@@ -231,11 +231,11 @@ void video_copy_rect(void *src, void *dst, RECT *src_rect, RECT *dst_rect)
 
 	sceGuStart(GU_DIRECT, gulist);
 
-	sceGuDrawBufferList(GU_PSM_5551, dst, BUF_WIDTH);
+	sceGuDrawBufferList(GU_PSM_4444, dst, BUF_WIDTH);
 	sceGuScissor(dst_rect->left, dst_rect->top, dst_rect->right, dst_rect->bottom);
 	sceGuDisable(GU_ALPHA_TEST);
 
-	sceGuTexMode(GU_PSM_5551, 0, 0, GU_FALSE);
+	sceGuTexMode(GU_PSM_4444, 0, 0, GU_FALSE);
 	sceGuTexImage(0, BUF_WIDTH, BUF_WIDTH, BUF_WIDTH, GU_FRAME_ADDR(src));
 	sceGuTexFunc(GU_TFX_REPLACE, GU_TCC_RGBA);
 	if (sw == dw && sh == dh)
@@ -297,11 +297,11 @@ void video_copy_rect_flip(void *src, void *dst, RECT *src_rect, RECT *dst_rect)
 
 	sceGuStart(GU_DIRECT, gulist);
 
-	sceGuDrawBufferList(GU_PSM_5551, dst, BUF_WIDTH);
+	sceGuDrawBufferList(GU_PSM_4444, dst, BUF_WIDTH);
 	sceGuScissor(dst_rect->left, dst_rect->top, dst_rect->right, dst_rect->bottom);
 	sceGuDisable(GU_ALPHA_TEST);
 
-	sceGuTexMode(GU_PSM_5551, 0, 0, GU_FALSE);
+	sceGuTexMode(GU_PSM_4444, 0, 0, GU_FALSE);
 	sceGuTexImage(0, BUF_WIDTH, BUF_WIDTH, BUF_WIDTH, GU_FRAME_ADDR(src));
 	sceGuTexFunc(GU_TFX_REPLACE, GU_TCC_RGBA);
 	if (sw == dw && sh == dh)
@@ -364,13 +364,13 @@ void video_copy_rect_rotate(void *src, void *dst, RECT *src_rect, RECT *dst_rect
 
 	sceGuStart(GU_DIRECT, gulist);
 
-	sceGuDrawBufferList(GU_PSM_5551, dst, BUF_WIDTH);
+	sceGuDrawBufferList(GU_PSM_4444, dst, BUF_WIDTH);
 	sceGuScissor(dst_rect->left, dst_rect->top, dst_rect->right, dst_rect->bottom);
 	sceGuDisable(GU_ALPHA_TEST);
 	sceGuDisable(GU_BLEND);
 	sceGuDisable(GU_DEPTH_TEST);
 
-	sceGuTexMode(GU_PSM_5551, 0, 0, GU_FALSE);
+	sceGuTexMode(GU_PSM_4444, 0, 0, GU_FALSE);
 	sceGuTexImage(0, BUF_WIDTH, BUF_WIDTH, BUF_WIDTH, GU_FRAME_ADDR(src));
 	sceGuTexFunc(GU_TFX_REPLACE, GU_TCC_RGBA);
 	if (sw == dh && sh == dw)
@@ -491,7 +491,7 @@ void video_draw_texture(unsigned long src_fmt, unsigned long dst_fmt, void *src,
 void mh_start(void)
 {
 	sceGuStart(GU_DIRECT, gulist);
-	sceGuDrawBufferList(GU_PSM_5551, draw_frame, BUF_WIDTH);
+	sceGuDrawBufferList(GU_PSM_4444, draw_frame, BUF_WIDTH);
 }
 
 void mh_print(int x,int y,const char *str,unsigned int color)
