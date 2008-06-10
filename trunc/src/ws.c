@@ -38,7 +38,7 @@ static const unsigned char initialIoValue[256] = {
     0xd1, 0xd1, 0xd1, 0xd1, 0xd1, 0xd1, 0xd1, 0xd1, 0xd1, 0xd1, 0xd1, 0xd1, 0xd1, 0xd1, 0xd1, 0xd1  // F
 };
 
-#define RGBmono(m) ((m<<10)|(m<<5)|(m<<0)|0x8000)
+#define RGBmono(m) ((m<<8)|(m<<4)|(m<<0)|0xf000)
 static const unsigned short DefColor[]={
     RGBmono(31), RGBmono(29), RGBmono(27), RGBmono(25),
     RGBmono(23), RGBmono(21), RGBmono(19), RGBmono(17),
