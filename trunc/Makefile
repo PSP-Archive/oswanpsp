@@ -10,7 +10,6 @@ ASFLAGS = $(CFLAGS)
 
 LIBDIR =
 LDFLAGS =
-BUILD_PRX = 1
 PSP_FW_VERSION=352
 LIBS= -lpsppower -lpspgu -lpspaudio
 
