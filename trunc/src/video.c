@@ -43,7 +43,7 @@ void video_init(void)
 {
     // Init intraFont library
     intraFontInit();
-    jpn0 = intraFontLoad("flash0:/font/jpn0.pgf",INTRAFONT_STRING_SJIS);
+    jpn0 = intraFontLoad("flash0:/font/jpn0.pgf", INTRAFONT_STRING_SJIS | INTRAFONT_CACHE_ALL);
 
 	draw_frame = (void *)(FRAMESIZE * 0);
 	show_frame = (void *)(FRAMESIZE * 1);
