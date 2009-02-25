@@ -18,8 +18,5 @@ PSP_EBOOT_TITLE = Oswan PSP
 PSP_EBOOT_ICON = icon.png
 
 PSPSDK=$(shell psp-config --pspsdk-path)
-ifndef PSPSDK
-PSPSDK = /D/devkitPro/devkitPSP/psp/sdk
-endif
 include $(PSPSDK)/lib/build.mak
 
