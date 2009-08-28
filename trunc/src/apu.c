@@ -22,11 +22,18 @@
 
 static int SndWr = 0;
 static int SndRd = 0;
+static int wPos = 0;
+static int nPos = 0;
 static short sndbuffer[SND_RNGSIZE][2]; // Sound Ring Buffer
 static int SndSleep = 0;
-int PspAudioCh = -1;
-int PspAudioThread = -1;
-int WsWaveVol = 80;
+static int PspAudioCh = -1;
+static int PspAudioThread = -1;
+static int WsWaveVol = 80;
+static short WaveDataL[WAV_BUFFER + 4];
+static short WaveDataR[WAV_BUFFER + 4];
+static unsigned char PData[4][32];
+static unsigned char PDataN[8][BUFSIZEN];
+static unsigned int RandData[BUFSIZEN];
 unsigned long WaveMap;
 int ChPlay[] = {0, 0, 0, 0};
 int ChFreq[] = {0, 0, 0, 0};
@@ -35,15 +42,11 @@ int ChRVol[] = {0, 0, 0, 0};
 int VoiceOn = 0;
 SWEEP Swp;
 NOISE Noise;
-short WaveDataL[WAV_BUFFER + 4];
-short WaveDataR[WAV_BUFFER + 4];
-unsigned char PData[4][32];
-unsigned char PDataN[8][BUFSIZEN];
 
 int apuInit(void)
 {
 	int i, j;
-	SndWr = SndRd = 0;
+	SndWr = SndRd = wPos = nPos = 0;
 
 	for (i = 0; i < 4; i++) {
 		for (j = 0; j < 32; j++) {
@@ -58,6 +61,9 @@ int apuInit(void)
 		for (j = 0; j < BUFSIZEN; j++) {
 			PDataN[i][j] = ((apuMrand(15 - i) & 1) ? 15 : 0);
 		}
+	}
+	for (i = 0; j < BUFSIZEN; i++) {
+		RandData[i] = apuMrand(15);
 	}
 //	sceAudioSetFrequency(PSP_AUDIO_FREQ_48K);
 	PspAudioCh = sceAudioChReserve(PSP_AUDIO_NEXT_CHANNEL, SND_BNKSIZE, PSP_AUDIO_FORMAT_STEREO);
@@ -293,7 +299,6 @@ void apuWaveSet(void)
 	int    channel, index;
 	short  value, lVol[4], rVol[4];
 	short  LL, RR, vVol;
-	static int wPos = 0;
 //ChPlay[0] = 1;
 //ChPlay[1] = 0;
 //ChPlay[2] = 0;
@@ -343,4 +348,8 @@ void apuWaveSet(void)
 		apuSoundProc16(WaveDataL, WaveDataR, WAV_BUFFER);
 		wPos = 0;
 	}
+	if (++nPos >= BUFSIZEN) {
+		nPos = 0;
+	}
+	*((unsigned short*)(IO + 0x92)) = RandData[nPos];
 }

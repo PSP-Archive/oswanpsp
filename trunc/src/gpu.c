@@ -41,7 +41,7 @@ unsigned char* gpuMonoTileCache(unsigned short tileInfo, int row, int bank)
     int line;
 
     tileIndex = tileInfo & 0x1FF;
-    if (bank) // bank
+    if (bank && (IO[0x60] & 0x80)) // 4-color bank
     {
         tileIndex += 512;
     }
