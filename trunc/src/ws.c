@@ -516,12 +516,21 @@ void wsWritePort(unsigned char port,unsigned char val)
         case 0xA4:
         case 0xA5:
                     IO[port] = val;
-                    hblankTimer = hblankTimerPreset = *(unsigned short*)(IO + 0xA4);
+                    hblankTimerPreset = *(unsigned short*)(IO + 0xA4);
+                    if (IO[0xA2] & 0x01)
+                    {
+                        hblankTimer = hblankTimerPreset;
+                    }
                     return;
         case 0xA6:
         case 0xA7:
                     IO[port] = val;
-                    vblankTimer = vblankTimerPreset = *(unsigned short*)(IO + 0xA6);
+                    IO[port + 4] = val;
+                    vblankTimerPreset = *(unsigned short*)(IO + 0xA6);
+                    if (IO[0xA2] & 0x04)
+                    {
+                        vblankTimer = vblankTimerPreset;
+                    }
                     return;
         case 0xB5:
                     IO[0xB5] = val & 0xF0;
@@ -886,149 +895,6 @@ int wsExecuteFrame(int render)
         apuWaveSet();
     }
     return frameFin;
-}
-
-int Interrupt(void)
-{
-    static int LCount=0, Joyz=0x0000;
-    int i, j;
-
-    if(++LCount>=8) // 8回で1Hblank期間
-    {
-        LCount=0;
-    }
-
-    switch(LCount)
-    {
-        case 0:
-            break;
-        case 2:
-			// Hblank毎に1サンプルセットすることで12KHzのwaveデータが出来る
-			apuWaveSet();
-            break;
-        case 4:
-            if(RSTRL == 140)
-            {
-				sprRamBase = SprMap + IO[0x05];
-				SprCount = IO[0x06];
-				if (SprCount > 0x80) {
-					SprCount = 0x80;
-				}
-				sprBuffer = (unsigned long*)SprTable;
-				for (i = 0; i < SprCount; i++) {
-					*sprBuffer++ = *sprRamBase++;
-				}
-            }
-
-            if(LCDSLP & 0x01)
-            {
-                if(RSTRL == 0)
-                {
-                    SkipCnt--;
-                    if(SkipCnt < 0)
-                    {
-                        SkipCnt = 4;
-                    }
-                }
-                if(TblSkip[FrameSkip][SkipCnt])
-                {
-					if(render && (IO[0x02] < 144)) {
-						if (IO[0x60] & 0x40)
-						{
-							gpuRenderScanLineColor();
-						}
-						else
-						{
-							gpuRenderScanLineMono();
-						}
-					}
-                }
-            }
-            break;
-        case 6:
-            i = (HCNTH << 8) + HCNTL;
-            j = (HPREH << 8) + HPREL;
-            if((TIMCTL & 0x01) && i)
-            {
-                i--;
-                if(!i)
-                {
-                    if(TIMCTL & 0x02)
-                    {
-                        i = j;
-                    }
-                    if(IRQENA & HTM_IFLAG)
-                    {
-                        IRQACK |= HTM_IFLAG;
-                    }
-                }
-                HCNTH = (byte)(i >> 8);
-                HCNTL = (byte)(i & 0xFF);
-            }
-            else if(j == 1)
-            {
-                if(IRQENA & HTM_IFLAG)
-                {
-                    IRQACK |= HTM_IFLAG;
-                }
-            }
-
-
-        // HBlank Timer Interrupt
-        if (hblankTimer == 1) {
-            IO[0xb6] |= 0x80;
-        }
-        // Update HBlank count
-        (*(unsigned short*)(IO+0xA8))++;
-        // HBLANK count down
-        if (hblankTimer && (IO[0xa2] & 0x01)) {
-            hblankTimer--;
-            if (!hblankTimer && (IO[0xa2] & 0x02))
-                hblankTimer = hblankTimerPreset;
-            *(unsigned short*)(IO+0xA4) = hblankTimer;
-        }
-        if (IO[0x02] == 144) {
-            frameFin = 1;
-            // Update VBlank count
-            vblankCount++;
-            // 0xAAは4バイト境界に合わない
-            //*(unsigned long*)(IO+0xAA) = vblankCount;
-            *(unsigned short*)(IO+0xAA) = vblankCount & 0xFFFF;
-            *(unsigned short*)(IO+0xAC) = vblankCount >> 16;
-            // VBlank Begin Interrupt
-			if (IO[0xb2] & 0x10) {
-				IO[0xb6] |= 0x40;
-			}
-            // VBlank Timer Interrupt
-            if ((IO[0xb2] & 0x20) && (vblankTimer == 1))
-                IO[0xb6] |= 0x20;
-            // VBLANK count down
-            if (vblankTimer && (IO[0xa2] & 0x04)) {
-                vblankTimer--;
-                if (!vblankTimer && (IO[0xa2] & 0x08))
-                    vblankTimer = vblankTimerPreset;
-                *(unsigned short*)(IO+0xA6) = vblankTimer;
-            }
-        }
-			// Scanline Match Interrupt
-			if ((IO[0xb2] & 0x10) && (IO[0x02] == IO[0x03])) {
-				IO[0xb6] |= 0x10;
-			}
-
-            break;
-        case 7:
-            RSTRL++;
-            if(RSTRL>=159)
-            {
-                RSTRL=0;
-            }
-
-            break;
-        default:
-            break;
-    }
-
-    return IRQACK;
 }
 
 /*-------------------------
