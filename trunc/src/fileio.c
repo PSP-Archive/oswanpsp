@@ -120,6 +120,26 @@ char *fileioPathFindFileName(const char *fn)
     return pszSlash;
 }
 
+void fileioRomPatch(WSROMHEADER *rom)
+{
+	if (rom->developperId == 0x01 && rom->cartId == 0x16) // SWJ-BANC16 Star Hearts
+	{
+		rom->saveSize = 2;
+	}
+	if (rom->developperId == 0x01 && rom->cartId == 0x2C) // SWJ-BAN02C-02F デジタルパートナー
+	{
+		rom->saveSize = 2;
+	}
+	if (rom->developperId == 0x18 && rom->cartId == 0x03) // SWJ-KGT003 爆走デコトラ伝説
+	{
+		rom->saveSize = 2;
+	}
+	if (rom->developperId == 0x33 && rom->cartId == 0x01) // SWJ-WIZC01 激闘! クラッシュギア T
+	{
+		rom->saveSize = 2;
+	}
+}
+
 int fileioOpenRom(void)
 {
     SceUID fd;
@@ -131,6 +151,7 @@ int fileioOpenRom(void)
     fd = sceIoOpen(RomPath, PSP_O_RDONLY, 0777);
     sceIoLseek32(fd, -10, SEEK_END);
     sceIoRead(fd, &WsRomHeader, sizeof(WsRomHeader));
+	fileioRomPatch(&WsRomHeader);
     switch (WsRomHeader.romSize)
     {
         case 0: CartSize = 0x20000; break;

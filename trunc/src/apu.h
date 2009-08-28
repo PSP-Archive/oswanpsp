@@ -16,7 +16,6 @@ typedef struct noise {
     int pattern;
 } NOISE;
 
-extern int PspAudioThread;
 extern unsigned long WaveMap;
 extern int ChPlay[];
 extern int ChFreq[];
@@ -25,7 +24,6 @@ extern int ChRVol[];
 extern int VoiceOn;
 extern SWEEP Swp;
 extern NOISE Noise;
-extern unsigned char PData[4][32];
 
 int apuInit(void);
 void apuEnd(void);
