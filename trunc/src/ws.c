@@ -40,10 +40,10 @@ static const unsigned char initialIoValue[256] = {
 
 #define RGBmono(m) ((m<<8)|(m<<4)|(m<<0)|0xf000)
 static const unsigned short DefColor[]={
-    RGBmono(31), RGBmono(29), RGBmono(27), RGBmono(25),
-    RGBmono(23), RGBmono(21), RGBmono(19), RGBmono(17),
-    RGBmono(15), RGBmono(13), RGBmono(11), RGBmono( 9),
-    RGBmono( 7), RGBmono( 5), RGBmono( 3), RGBmono( 1)
+    RGBmono(15), RGBmono(14), RGBmono(13), RGBmono(12),
+    RGBmono(11), RGBmono(10), RGBmono( 9), RGBmono( 8),
+    RGBmono( 7), RGBmono( 6), RGBmono( 5), RGBmono( 4),
+    RGBmono( 3), RGBmono( 2), RGBmono( 1), RGBmono( 0)
 };
 
 int Run = 1;
