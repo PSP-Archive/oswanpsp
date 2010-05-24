@@ -16,14 +16,14 @@ unsigned short* FgMap;
 unsigned long* SprMap;
 unsigned long SprTable[128 * 4];
 int SprCount;
-unsigned char TileCache[1024*8*8]; // 8ドット8列
-unsigned char HflippedTileCache[1024*8*8];
 unsigned char MonoModifiedTile[1024]; //512 * 2bank(sorobangu)
 unsigned char ColorModifiedTile[1024];
-unsigned long TransparentTile[1024][8];
-char LMask[256 + 8];
-char WMaskIn[256];
-char WMaskAll[256];
+static unsigned char TileCache[1024*8*8]; // 8ドット8列
+static unsigned char HflippedTileCache[1024*8*8];
+static unsigned long TransparentTile[1024][8];
+static char LMask[256 + 8];
+static char WMaskIn[256];
+static char WMaskAll[256];
 
 extern unsigned short *work_frame;
 

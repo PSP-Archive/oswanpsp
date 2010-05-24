@@ -12,7 +12,6 @@ extern unsigned long SprTable[];
 extern int SprCount;
 extern unsigned char MonoModifiedTile[];
 extern unsigned char ColorModifiedTile[];
-extern unsigned short FrameBuffer[];
 
 void gpuInit(void);
 void gpuRenderScanLineMono(void);
